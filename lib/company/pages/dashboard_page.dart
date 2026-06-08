@@ -8,6 +8,7 @@ import 'package:dashflow/company/pages/my_payroll_page.dart';
 import 'package:dashflow/company/pages/notifications_page.dart';
 import 'package:dashflow/company/pages/payroll_page.dart';
 import 'package:dashflow/company/pages/repots_page.dart';
+import 'package:dashflow/company/pages/leave_management_screen.dart';
 import 'package:dashflow/features/profile/pages/profile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -325,10 +326,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           ),
           ListTile(
             leading: const Icon(Icons.time_to_leave),
-            title: const Text("Leave"),
+            title: const Text("Leave Requests"),
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const MyLeavesPage()));
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const LeaveManagementScreen()));
             },
           ),
           ListTile(

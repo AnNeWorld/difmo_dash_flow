@@ -58,47 +58,58 @@ class EmployeeModel {
   }
 
   factory EmployeeModel.fromJson(Map<String, dynamic> json) {
-    final fName = json['firstName'] as String? ?? '';
-    final lName = json['lastName'] as String? ?? '';
-    final rawName = json['name'] as String? ?? '';
+    final userData = json['user'] is Map<String, dynamic> ? json['user'] as Map<String, dynamic> : json;
+
+    final fName = userData['firstName']?.toString() ?? '';
+    final lName = userData['lastName']?.toString() ?? '';
+    final rawName = userData['name']?.toString() ?? '';
     final computedName = '$fName $lName'.trim().isNotEmpty
         ? '$fName $lName'.trim()
         : rawName;
 
+    String extractString(dynamic val) {
+      if (val == null) return '';
+      if (val is List && val.isNotEmpty) {
+        final first = val.first;
+        if (first is Map) return first['name']?.toString() ?? first.toString();
+        return first.toString();
+      }
+      if (val is Map) return val['name']?.toString() ?? val.toString();
+      return val.toString();
+    }
+
     return EmployeeModel(
-      id: json['_id'] as String? ?? json['id'] as String? ?? '',
+      id: json['_id']?.toString() ?? json['id']?.toString() ?? '',
       firstName: fName,
       lastName: lName,
       name: computedName,
-      email: json['email'] as String? ?? '',
-      phone: json['phone'] as String? ?? '',
-      department: json['department'] as String? ?? '',
-      designation: json['designation'] as String? ?? '',
-      salary: (json['salary'] as num?)?.toDouble() ?? 0.0,
+      email: userData['email']?.toString() ?? '',
+      phone: userData['phone']?.toString() ?? '',
+      department: extractString(json['department']),
+      designation: extractString(json['designation'] ?? json['roles'] ?? userData['roles']),
+      salary: double.tryParse(json['salary']?.toString() ?? '0') ?? 0.0,
       joinDate: json['joinDate'] != null
-          ? DateTime.tryParse(json['joinDate'] as String) ?? DateTime.now()
+          ? DateTime.tryParse(json['joinDate'].toString()) ?? DateTime.now()
           : DateTime.now(),
-      profileImage: json['profileImage'] as String?,
-      gender: json['gender'] as String? ?? '',
+      profileImage: userData['profileImage']?.toString(),
+      gender: extractString(json['gender']),
       dateOfBirth: json['dateOfBirth'] != null
-          ? DateTime.tryParse(json['dateOfBirth'] as String) ?? DateTime.now()
+          ? DateTime.tryParse(json['dateOfBirth'].toString()) ?? DateTime.now()
           : DateTime.now(),
-      address: json['address'] as String? ?? '',
-      city: json['city'] as String? ?? '',
-      state: json['state'] as String? ?? '',
-      zipCode: json['zipCode'] as String? ?? '',
-      bankAccount: json['bankAccount'] as String?,
-      ifscCode: json['ifscCode'] as String?,
-      panNumber: json['panNumber'] as String? ?? '',
-      aadharNumber: json['aadharNumber'] as String?,
-      employmentType: json['employmentType'] as String? ?? '',
-      status: json['status'] as String? ?? '',
+      address: extractString(json['address']),
+      city: extractString(json['city']),
+      state: extractString(json['state']),
+      zipCode: extractString(json['zipCode']),
+      bankAccount: extractString(json['bankAccount']),
+      ifscCode: extractString(json['ifscCode']),
+      panNumber: extractString(json['panNumber']),
+      aadharNumber: extractString(json['aadharNumber']),
+      employmentType: extractString(json['employmentType']),
+      status: (json['status'] ?? (userData['isActive'] == true ? 'Active' : 'Inactive')).toString(),
       exitDate: json['exitDate'] != null
-          ? DateTime.tryParse(json['exitDate'] as String)
+          ? DateTime.tryParse(json['exitDate'].toString())
           : null,
-      isOnline:
-          json['isOnline'] as bool? ??
-          json['status'] == 'active' || json['status'] == 'Active',
+      isOnline: userData['isOnline'] == true || json['isOnline'] == true || userData['isActive'] == true,
     );
   }
 

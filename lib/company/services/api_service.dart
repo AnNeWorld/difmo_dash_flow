@@ -27,7 +27,7 @@ class ApiService {
       LogInterceptor(
         request: true,
         requestBody: true,
-        responseBody: true,
+        responseBody: false, // Turned off to prevent flooding the terminal with JSON data
         requestHeader: true,
         error: true,
       ),

@@ -43,6 +43,33 @@ class EmployeeService extends StateNotifier<AsyncValue<List<EmployeeModel>>> {
       state = AsyncValue.data(state.value!.where((e) => e.id != id).toList());
     }
   }
+
+  Future<bool> updateEmployee(EmployeeModel updatedEmp) async {
+    try {
+      await company_api.ApiService().updateEmployee(
+        id: updatedEmp.id,
+        firstName: updatedEmp.firstName,
+        lastName: updatedEmp.lastName,
+        email: updatedEmp.email,
+        phone: updatedEmp.phone,
+        designation: updatedEmp.designation,
+        department: updatedEmp.department,
+      );
+
+      // Optimistic UI update
+      if (state.value != null) {
+        state = AsyncValue.data(
+          state.value!
+              .map((e) => e.id == updatedEmp.id ? updatedEmp : e)
+              .toList(),
+        );
+      }
+      return true;
+    } catch (e) {
+      print('Error updating employee: $e');
+      return false;
+    }
+  }
 }
 
 final employeeProvider =

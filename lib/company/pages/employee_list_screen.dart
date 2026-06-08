@@ -3,15 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dashflow/company/services/employee_service.dart';
 import '../models/employee_model.dart';
 import 'package:dashflow/company/pages/add_new_empoyees.dart';
+import '../components/employees/edit_employee_screen.dart';
 
 class EmployeesListScreen extends ConsumerStatefulWidget {
   const EmployeesListScreen({super.key});
 
   @override
-  ConsumerState<EmployeesListScreen> createState() => _EmployeesListScreenState();
+  ConsumerState<EmployeesListScreen> createState() =>
+      _EmployeesListScreenState();
 }
 
-class _EmployeesListScreenState extends ConsumerState<EmployeesListScreen> with SingleTickerProviderStateMixin {
+class _EmployeesListScreenState extends ConsumerState<EmployeesListScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   String searchQuery = '';
   String _selectedDepartment = 'All Departments';
@@ -30,7 +33,10 @@ class _EmployeesListScreenState extends ConsumerState<EmployeesListScreen> with 
   }
 
   void _showAddEmployeeBottomSheet() {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => const AddEmployeeCompletePage()));
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const AddEmployeeCompletePage()),
+    );
   }
 
   @override
@@ -40,7 +46,11 @@ class _EmployeesListScreenState extends ConsumerState<EmployeesListScreen> with 
       appBar: AppBar(
         title: const Text(
           'Employee Management',
-          style: TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF1E293B), fontSize: 20),
+          style: TextStyle(
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF1E293B),
+            fontSize: 20,
+          ),
         ),
         elevation: 0,
         backgroundColor: Colors.white,
@@ -77,10 +87,14 @@ class _EmployeesListScreenState extends ConsumerState<EmployeesListScreen> with 
       error: (e, st) => Center(child: Text('Error: $e')),
       data: (employees) {
         final filteredEmployees = employees.where((e) {
-          final matchesSearch = e.fullName.toLowerCase().contains(searchQuery.toLowerCase()) || 
-                                e.email.toLowerCase().contains(searchQuery.toLowerCase());
-          final matchesDept = _selectedDepartment == 'All Departments' || e.department == _selectedDepartment;
-          final matchesStatus = _selectedStatus == 'All Statuses' || e.status == _selectedStatus;
+          final matchesSearch =
+              e.fullName.toLowerCase().contains(searchQuery.toLowerCase()) ||
+              e.email.toLowerCase().contains(searchQuery.toLowerCase());
+          final matchesDept =
+              _selectedDepartment == 'All Departments' ||
+              e.department == _selectedDepartment;
+          final matchesStatus =
+              _selectedStatus == 'All Statuses' || e.status == _selectedStatus;
           return matchesSearch && matchesDept && matchesStatus;
         }).toList();
 
@@ -108,28 +122,57 @@ class _EmployeesListScreenState extends ConsumerState<EmployeesListScreen> with 
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF1A73E8),
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 16,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
                       OutlinedButton.icon(
                         onPressed: () {},
-                        icon: const Icon(Icons.upload_file, size: 18, color: Colors.grey),
-                        label: const Text("Import CSV", style: TextStyle(color: Colors.black87)),
+                        icon: const Icon(
+                          Icons.upload_file,
+                          size: 18,
+                          color: Colors.grey,
+                        ),
+                        label: const Text(
+                          "Import CSV",
+                          style: TextStyle(color: Colors.black87),
+                        ),
                         style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 16,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
                       OutlinedButton.icon(
                         onPressed: () {},
-                        icon: const Icon(Icons.download, size: 18, color: Colors.grey),
-                        label: const Text("Export", style: TextStyle(color: Colors.black87)),
+                        icon: const Icon(
+                          Icons.download,
+                          size: 18,
+                          color: Colors.grey,
+                        ),
+                        label: const Text(
+                          "Export",
+                          style: TextStyle(color: Colors.black87),
+                        ),
                         style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 16,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
                       ),
                     ],
@@ -137,7 +180,7 @@ class _EmployeesListScreenState extends ConsumerState<EmployeesListScreen> with 
                 ],
               ),
               const SizedBox(height: 32),
-              
+
               // Filter Row
               Row(
                 children: [
@@ -147,7 +190,10 @@ class _EmployeesListScreenState extends ConsumerState<EmployeesListScreen> with 
                       onChanged: (val) => setState(() => searchQuery = val),
                       decoration: InputDecoration(
                         hintText: "Search by name, email, or ID...",
-                        prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                        prefixIcon: const Icon(
+                          Icons.search,
+                          color: Colors.grey,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: BorderSide(color: Colors.grey.shade300),
@@ -156,7 +202,10 @@ class _EmployeesListScreenState extends ConsumerState<EmployeesListScreen> with 
                           borderRadius: BorderRadius.circular(8),
                           borderSide: BorderSide(color: Colors.grey.shade300),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
                         filled: true,
                         fillColor: Colors.white,
                       ),
@@ -168,16 +217,35 @@ class _EmployeesListScreenState extends ConsumerState<EmployeesListScreen> with 
                       value: _selectedDepartment,
                       decoration: InputDecoration(
                         labelText: "Department",
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
                         filled: true,
                         fillColor: Colors.white,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
                       ),
-                      items: ["All Departments", "Engineering", "Human Resources", "Sales"]
-                          .map((d) => DropdownMenuItem(value: d, child: Text(d)))
-                          .toList(),
-                      onChanged: (val) => setState(() => _selectedDepartment = val!),
+                      items:
+                          [
+                                "All Departments",
+                                "Engineering",
+                                "Human Resources",
+                                "Sales",
+                              ]
+                              .map(
+                                (d) =>
+                                    DropdownMenuItem(value: d, child: Text(d)),
+                              )
+                              .toList(),
+                      onChanged: (val) =>
+                          setState(() => _selectedDepartment = val!),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -186,28 +254,44 @@ class _EmployeesListScreenState extends ConsumerState<EmployeesListScreen> with 
                       value: _selectedStatus,
                       decoration: InputDecoration(
                         labelText: "Status",
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
                         filled: true,
                         fillColor: Colors.white,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
                       ),
                       items: ["All Statuses", "Active", "Inactive"]
-                          .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                          .map(
+                            (s) => DropdownMenuItem(value: s, child: Text(s)),
+                          )
                           .toList(),
-                      onChanged: (val) => setState(() => _selectedStatus = val!),
+                      onChanged: (val) =>
+                          setState(() => _selectedStatus = val!),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 24),
-              
+
               // Info Text
               Row(
                 children: [
                   Text(
                     "Found ${filteredEmployees.length} employees",
-                    style: const TextStyle(color: Color(0xFF1E293B), fontWeight: FontWeight.bold, fontSize: 16),
+                    style: const TextStyle(
+                      color: Color(0xFF1E293B),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
                   ),
                   const Spacer(),
                   TextButton.icon(
@@ -219,98 +303,278 @@ class _EmployeesListScreenState extends ConsumerState<EmployeesListScreen> with 
                       });
                     },
                     icon: const Icon(Icons.close, size: 16, color: Colors.red),
-                    label: const Text("Reset Filters", style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600)),
+                    label: const Text(
+                      "Reset Filters",
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
-              
-              // Data Table
-              Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey.shade200),
-                ),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: DataTable(
-                    headingRowColor: MaterialStateProperty.all(const Color(0xFFF8FAFC)),
-                    dataRowMaxHeight: 70,
-                    dataRowMinHeight: 60,
-                    horizontalMargin: 24,
-                    columns: const [
-                      DataColumn(label: Text("EMPLOYEE", style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: Color(0xFF64748B)))),
-                      DataColumn(label: Text("EMAIL", style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: Color(0xFF64748B)))),
-                      DataColumn(label: Text("DEPARTMENT", style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: Color(0xFF64748B)))),
-                      DataColumn(label: Text("STATUS", style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: Color(0xFF64748B)))),
-                      DataColumn(label: Text("HIRE DATE", style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: Color(0xFF64748B)))),
-                      DataColumn(label: Text("MANAGER", style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: Color(0xFF64748B)))),
-                      DataColumn(label: Text("ACTIONS", style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: Color(0xFF64748B)))),
-                    ],
-                    rows: filteredEmployees.map((emp) {
-                      return DataRow(
-                        cells: [
-                          DataCell(
-                            Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 18,
-                                  backgroundColor: const Color(0xFF1A73E8),
-                                  child: Text(
-                                    emp.firstName.isNotEmpty ? emp.firstName[0].toUpperCase() : 'E',
-                                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Text(emp.fullName, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Color(0xFF1E293B))),
-                              ],
-                            ),
-                          ),
-                          DataCell(Text(emp.email, style: const TextStyle(color: Color(0xFF475569)))),
-                          DataCell(
-                            Row(
-                              children: [
-                                const Icon(Icons.circle, size: 6, color: Color(0xFF94A3B8)),
-                                const SizedBox(width: 8),
-                                Text(emp.department, style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF475569))),
-                              ],
-                            ),
-                          ),
-                          DataCell(
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: emp.status == 'Active' ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: emp.status == 'Active' ? const Color(0xFFBBF7D0) : const Color(0xFFE2E8F0),
-                                ),
+
+              // Card List View
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: filteredEmployees.length,
+                itemBuilder: (context, index) {
+                  final emp = filteredEmployees[index];
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Top Row: Checkbox, Avatar, Info, Actions
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Checkbox(
+                              value: false,
+                              onChanged: (val) {},
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(4),
                               ),
+                              side: BorderSide(color: Colors.grey.shade400),
+                            ),
+                            const SizedBox(width: 8),
+                            CircleAvatar(
+                              radius: 24,
+                              backgroundColor: const Color(
+                                0xFF0EA5E9,
+                              ), // Light blue avatar
                               child: Text(
-                                emp.status,
-                                style: TextStyle(
-                                  color: emp.status == 'Active' ? const Color(0xFF166534) : const Color(0xFF475569),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
+                                emp.firstName.isNotEmpty
+                                    ? emp.firstName[0].toUpperCase()
+                                    : 'E',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
-                          ),
-                          DataCell(Text("${_getMonth(emp.joinDate.month)} ${emp.joinDate.day}, ${emp.joinDate.year}", style: const TextStyle(color: Color(0xFF475569)))),
-                          DataCell(const Text("N/A", style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1E293B)))),
-                          DataCell(
-                            IconButton(
-                              icon: const Icon(Icons.more_vert, size: 20, color: Color(0xFF94A3B8)),
-                              onPressed: () {},
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    emp.fullName,
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF1E293B),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    emp.email,
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: Color(0xFF64748B),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
-                      );
-                    }).toList(),
-                  ),
-                ),
+                            Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.remove_red_eye_outlined,
+                                    color: Colors.grey,
+                                    size: 20,
+                                  ),
+                                  onPressed: () {},
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.edit_outlined, color: Colors.grey, size: 20),
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (_) => EditEmployeeScreen(employee: emp)),
+                                    );
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.delete_outline,
+                                    color: Colors.grey,
+                                    size: 20,
+                                  ),
+                                  onPressed: () {},
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Grid of Details
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    "DEPARTMENT",
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF94A3B8),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    emp.department.isNotEmpty
+                                        ? emp.department
+                                        : "Unassigned",
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF1E293B),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    "ROLE",
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF94A3B8),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    emp.designation.isNotEmpty
+                                        ? emp.designation
+                                        : "Employee",
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF1E293B),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    "STATUS",
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF94A3B8),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: emp.status == 'Active'
+                                          ? const Color(0xFFDCFCE7)
+                                          : const Color(0xFFF1F5F9),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: emp.status == 'Active'
+                                            ? const Color(0xFFBBF7D0)
+                                            : const Color(0xFFE2E8F0),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      emp.status,
+                                      style: TextStyle(
+                                        color: emp.status == 'Active'
+                                            ? const Color(0xFF166534)
+                                            : const Color(0xFF475569),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    "HIRED ON",
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF94A3B8),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    "${_getMonth(emp.joinDate.month)} ${emp.joinDate.day}, ${emp.joinDate.year}",
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF1E293B),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              "MANAGER",
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF94A3B8),
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              "Unassigned",
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF1E293B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 32),
             ],
@@ -321,7 +585,20 @@ class _EmployeesListScreenState extends ConsumerState<EmployeesListScreen> with 
   }
 
   String _getMonth(int month) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     return months[month - 1];
   }
 }

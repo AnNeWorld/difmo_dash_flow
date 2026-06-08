@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'add_new_empoyees.dart';
+import '../components/employees/edit_employee_screen.dart';
 import '../services/employee_service.dart';
 
 void main() {
@@ -132,8 +133,9 @@ class EmployeePage extends ConsumerWidget {
                           IconButton(
                             icon: const Icon(Icons.edit, color: Colors.indigo),
                             onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Edit ${employee.fullName}')),
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => EditEmployeeScreen(employee: employee)),
                               );
                             },
                           ),
