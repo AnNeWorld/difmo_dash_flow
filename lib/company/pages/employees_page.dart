@@ -64,7 +64,7 @@ class EmployeePage extends ConsumerWidget {
                         radius: 28,
                         backgroundColor: Colors.indigo.shade50,
                         child: Text(
-                          employee.name[0].toUpperCase(),
+                          employee.fullName.isNotEmpty ? employee.fullName[0].toUpperCase() : 'E',
                           style: TextStyle(
                             color: Colors.indigo.shade700,
                             fontSize: 20,
@@ -78,7 +78,7 @@ class EmployeePage extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              employee.name,
+                              employee.fullName,
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -87,7 +87,7 @@ class EmployeePage extends ConsumerWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              employee.position,
+                              employee.designation,
                               style: TextStyle(
                                 color: Colors.grey.shade600,
                                 fontSize: 14,
@@ -133,7 +133,7 @@ class EmployeePage extends ConsumerWidget {
                             icon: const Icon(Icons.edit, color: Colors.indigo),
                             onPressed: () {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Edit ${employee.name}')),
+                                SnackBar(content: Text('Edit ${employee.fullName}')),
                               );
                             },
                           ),
@@ -142,7 +142,7 @@ class EmployeePage extends ConsumerWidget {
                             onPressed: () {
                               ref.read(employeeProvider.notifier).deleteEmployee(employee.id);
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('${employee.name} deleted.')),
+                                SnackBar(content: Text('${employee.fullName} deleted.')),
                               );
                             },
                           ),

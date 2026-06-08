@@ -17,21 +17,21 @@ class DashboardService {
 
     // Returning mock data based on the website dashboard
     return const DashboardData(
-      totalEmployees: 412,
-      presentToday: 387,
-      productivityPercentage: 94.0,
-      analyticsActivityCount: 142,
+      totalEmployees: 19,
+      presentToday: 7,
+      productivityPercentage: 0.0,
+      analyticsActivityCount: 0,
       attendanceTrends: [
-        AttendanceTrend(day: 'Mon', count: 350),
-        AttendanceTrend(day: 'Tue', count: 380),
-        AttendanceTrend(day: 'Wed', count: 390),
-        AttendanceTrend(day: 'Thu', count: 387),
-        AttendanceTrend(day: 'Fri', count: 360),
-        AttendanceTrend(day: 'Sat', count: 120),
-        AttendanceTrend(day: 'Sun', count: 110),
+        AttendanceTrend(day: 'Tue', count: 8),
+        AttendanceTrend(day: 'Wed', count: 8),
+        AttendanceTrend(day: 'Thu', count: 7),
+        AttendanceTrend(day: 'Fri', count: 8),
+        AttendanceTrend(day: 'Sat', count: 8),
+        AttendanceTrend(day: 'Sun', count: 1),
+        AttendanceTrend(day: 'Mon', count: 6),
       ],
-      aggregateEfficiency: 82.5,
-      efficiencyChange: 4.2,
+      aggregateEfficiency: 60.0,
+      efficiencyChange: 2.4,
       turnoverAmount: 1245000.0,
       netProfitAmount: 342000.0,
       payrollAmount: 456000.0,
@@ -42,8 +42,6 @@ class DashboardService {
         ActivityFeedItem(title: 'New policy update published', type: 'System', time: '10:45 AM'),
         ActivityFeedItem(title: 'Q3 Reviews cycle initiated', type: 'HR', time: '11:20 AM'),
         ActivityFeedItem(title: 'Server maintenance scheduled', type: 'IT', time: '02:00 PM'),
-        ActivityFeedItem(title: 'Annual retreat dates announced', type: 'Event', time: '04:15 PM'),
-        ActivityFeedItem(title: 'Payroll processed successfully', type: 'Finance', time: '05:30 PM'),
       ],
     );
   }

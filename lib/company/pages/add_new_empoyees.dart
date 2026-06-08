@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:dashflow/company/services/api_service.dart' as company_api;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dashflow/company/services/employee_service.dart';
+import 'package:dashflow/company/models/employee_model.dart';
 
-class AddEmployeeCompletePage extends StatefulWidget {
+class AddEmployeeCompletePage extends ConsumerStatefulWidget {
   const AddEmployeeCompletePage({super.key});
 
   @override
-  State<AddEmployeeCompletePage> createState() =>
+  ConsumerState<AddEmployeeCompletePage> createState() =>
       _AddEmployeeCompletePageState();
 }
 
-class _AddEmployeeCompletePageState extends State<AddEmployeeCompletePage> {
+class _AddEmployeeCompletePageState extends ConsumerState<AddEmployeeCompletePage> {
   final _formKey = GlobalKey<FormState>();
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
@@ -92,17 +94,29 @@ class _AddEmployeeCompletePageState extends State<AddEmployeeCompletePage> {
     setState(() => _isLoading = true);
 
     try {
-      await company_api.ApiService().createEmployee(
+      final newEmployee = EmployeeModel(
+        id: 'EMP-${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}',
+        name: '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}',
         firstName: _firstNameController.text.trim(),
         lastName: _lastNameController.text.trim(),
-        email: _emailController.text.trim(),
-        phone: _phoneController.text.trim(),
         designation: _designationController.text.trim(),
         department: _departmentController.text.trim(),
-        password: _passwordController.text.trim().isEmpty
-            ? "Welcome@123"
-            : _passwordController.text.trim(),
+        email: _emailController.text.trim(),
+        phone: _phoneController.text.trim(),
+        salary: double.tryParse(_salaryController.text.trim()) ?? 0.0,
+        joinDate: _selectedDate ?? DateTime.now(),
+        gender: 'Not Specified',
+        dateOfBirth: DateTime(1990, 1, 1),
+        address: '',
+        city: '',
+        state: '',
+        zipCode: '',
+        panNumber: '',
+        employmentType: 'Full-Time',
+        status: 'Active',
       );
+      
+      ref.read(employeeProvider.notifier).addEmployee(newEmployee);
 
       if (!mounted) return;
 

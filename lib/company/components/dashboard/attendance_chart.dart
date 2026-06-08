@@ -26,8 +26,8 @@ class AttendanceChartWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
                 "Attendance Dynamics",
@@ -38,7 +38,10 @@ class AttendanceChartWidget extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.green.shade50,
                   borderRadius: BorderRadius.circular(20),
@@ -64,28 +67,33 @@ class AttendanceChartWidget extends StatelessWidget {
                   drawVerticalLine: false,
                   horizontalInterval: 100,
                   getDrawingHorizontalLine: (value) {
-                    return FlLine(
-                      color: Colors.grey.shade200,
-                      strokeWidth: 1,
-                    );
+                    return FlLine(color: Colors.grey.shade200, strokeWidth: 1);
                   },
                 ),
                 titlesData: FlTitlesData(
                   show: true,
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
                       reservedSize: 30,
                       interval: 1,
                       getTitlesWidget: (value, meta) {
-                        if (value.toInt() >= 0 && value.toInt() < trends.length) {
+                        if (value.toInt() >= 0 &&
+                            value.toInt() < trends.length) {
                           return Padding(
                             padding: const EdgeInsets.only(top: 8.0),
                             child: Text(
                               trends[value.toInt()].day,
-                              style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                              style: TextStyle(
+                                color: Colors.grey.shade500,
+                                fontSize: 12,
+                              ),
                             ),
                           );
                         }
@@ -101,7 +109,10 @@ class AttendanceChartWidget extends StatelessWidget {
                       getTitlesWidget: (value, meta) {
                         return Text(
                           value.toInt().toString(),
-                          style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                          style: TextStyle(
+                            color: Colors.grey.shade500,
+                            fontSize: 12,
+                          ),
                         );
                       },
                     ),
@@ -152,7 +163,9 @@ class AttendanceChartWidget extends StatelessWidget {
                     value: aggregateEfficiency / 100,
                     minHeight: 12,
                     backgroundColor: Colors.grey.shade100,
-                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xff1D4ED8)),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      Color(0xff1D4ED8),
+                    ),
                   ),
                 ),
               ),
