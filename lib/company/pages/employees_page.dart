@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'add_new_empoyees.dart';
+import '../services/employee_service.dart';
 
 void main() {
-  runApp(const EmployeesPage());
+  runApp(const ProviderScope(child: EmployeesPage()));
 }
 
 class EmployeesPage extends StatelessWidget {
@@ -19,121 +21,153 @@ class EmployeesPage extends StatelessWidget {
   }
 }
 
-class EmployeePage extends StatelessWidget {
+class EmployeePage extends ConsumerWidget {
   const EmployeePage({super.key});
 
-  final List<Map<String, dynamic>> employees = const [
-    {
-      'name': ' Rahul Sharma',
-      'position': 'Flutter Developer',
-      'email': ' Rahul@example.com',
-      'salary': '₹60,000',
-    },
-    {
-      'name': 'Anjali Varma ',
-      'position': 'UI/UX Designer',
-      'email': 'Anjali@example.com',
-      'salary': '₹50,000',
-    },
-    {
-      'name': 'Neeraj  Singh',
-      'position': 'Backend Developer',
-      'email': 'Neeaj@example.com',
-      'salary': '₹70,000',
-    },
-  ];
-
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Employee Details'), centerTitle: true),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: employees.length,
-        itemBuilder: (context, index) {
-          final employee = employees[index];
+  Widget build(BuildContext context, WidgetRef ref) {
+    final employeesAsync = ref.watch(employeeProvider);
 
-          return Card(
-            elevation: 4,
-            margin: const EdgeInsets.only(bottom: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundColor: Colors.indigo,
-                    child: Text(
-                      employee['name'][0],
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          employee['name'],
-                          style: const TextStyle(
-                            fontSize: 16,
+    return Scaffold(
+      backgroundColor: const Color(0xffF4F7FC),
+      appBar: AppBar(
+        title: const Text('Employee Directory', style: TextStyle(fontWeight: FontWeight.bold)),
+        centerTitle: true,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.indigo,
+        elevation: 0,
+      ),
+      body: employeesAsync.when(
+        data: (employees) {
+          if (employees.isEmpty) {
+            return const Center(child: Text("No employees found."));
+          }
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: employees.length,
+            itemBuilder: (context, index) {
+              final employee = employees[index];
+
+              return Card(
+                elevation: 1,
+                color: Colors.white,
+                margin: const EdgeInsets.only(bottom: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: Colors.grey.shade200),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 28,
+                        backgroundColor: Colors.indigo.shade50,
+                        child: Text(
+                          employee.name[0].toUpperCase(),
+                          style: TextStyle(
+                            color: Colors.indigo.shade700,
+                            fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          employee['position'],
-                          style: TextStyle(
-                            color: Colors.grey[700],
-                            fontSize: 14,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              employee.name,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xff1A1A2E),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              employee.position,
+                              style: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              children: [
+                                Icon(Icons.email, size: 14, color: Colors.grey.shade500),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    employee.email,
+                                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.green.shade50,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                'Salary: ${employee.salary}',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green.shade700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Column(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit, color: Colors.indigo),
+                            onPressed: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Edit ${employee.name}')),
+                              );
+                            },
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          employee['email'],
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Salary: ${employee['salary']}',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.green,
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline, color: Colors.red),
+                            onPressed: () {
+                              ref.read(employeeProvider.notifier).deleteEmployee(employee.id);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('${employee.name} deleted.')),
+                              );
+                            },
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
+                    ],
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.edit),
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Edit ${employee['name']}')),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           );
         },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(child: Text('Error: $err')),
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const AddEmployeeCompletePage()),
           );
         },
-        child: const Icon(Icons.add),
+        backgroundColor: Colors.indigo,
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text("Add Employee", style: TextStyle(color: Colors.white)),
       ),
     );
   }

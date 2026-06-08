@@ -1,4 +1,10 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
 part of 'attendance_model.dart';
+
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
 
 _AttendanceModel _$AttendanceModelFromJson(Map<String, dynamic> json) =>
     _AttendanceModel(
@@ -12,6 +18,7 @@ _AttendanceModel _$AttendanceModelFromJson(Map<String, dynamic> json) =>
       workingHours: (json['workingHours'] as num?)?.toDouble(),
       remarks: json['remarks'] as String?,
     );
+
 Map<String, dynamic> _$AttendanceModelToJson(_AttendanceModel instance) =>
     <String, dynamic>{
       'id': instance.id,

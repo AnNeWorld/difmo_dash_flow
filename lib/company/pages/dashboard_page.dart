@@ -10,26 +10,33 @@ import 'package:dashflow/company/pages/payroll_page.dart';
 import 'package:dashflow/company/pages/repots_page.dart';
 import 'package:dashflow/features/profile/pages/profile.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:dashflow/company/services/api_service.dart' as company_api;
 
-class DashboardPage extends StatefulWidget {
+// Components
+import '../components/dashboard/stat_card_new.dart';
+import '../components/dashboard/attendance_chart.dart';
+import '../components/dashboard/fiscal_summary.dart';
+import '../components/dashboard/quick_actions.dart';
+import '../components/dashboard/activity_feed.dart';
+
+// Services
+import '../services/dashboard_service.dart';
+
+class DashboardPage extends ConsumerStatefulWidget {
   const DashboardPage({super.key});
 
   @override
-  State<DashboardPage> createState() => _DashboardPageState();
+  ConsumerState<DashboardPage> createState() => _DashboardPageState();
 }
 
-class _DashboardPageState extends State<DashboardPage> {
-  Future<Map<String, dynamic>>? _dashboardDataFuture;
+class _DashboardPageState extends ConsumerState<DashboardPage> {
   String _userName = "Admin";
 
   @override
   void initState() {
     super.initState();
-    _dashboardDataFuture = _fetchDashboardData();
     _loadUserName();
   }
 
@@ -54,208 +61,42 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
-  Future<Map<String, dynamic>> _fetchDashboardData() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final userStr = prefs.getString('user') ?? prefs.getString('user_profile');
-      String companyId = '';
-      if (userStr != null) {
-        final user = jsonDecode(userStr);
-        companyId = user['companyId'] ?? user['company']?['_id'] ?? user['company']?['id'] ?? user['company'] ?? '';
-      }
-      
-      if (companyId.isEmpty) {
-        final profile = await company_api.ApiService().getProfile();
-        companyId = profile['company']?['_id'] ?? profile['company']?['id'] ?? profile['companyId'] ?? '';
-      }
-      
-      if (companyId.isEmpty) {
-        // Fallback or demo company if not found
-        return {"totalEmployees": 0, "activePersonnel": 0, "systemIntegrity": "Unknown"};
-      }
-      
-      final data = await company_api.ApiService().getDashboardMetrics(companyId: companyId);
-      return data['data'] ?? data;
-    } catch (e) {
-      return {"totalEmployees": 0, "activePersonnel": 0, "error": e.toString()};
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    final dashboardDataAsync = ref.watch(dashboardDataProvider);
+
     return Scaffold(
-      backgroundColor: const Color(0xffF4F7FC),
-
-      drawer: Drawer(
-        child: ListView(
-          children:  [
-            DrawerHeader(
-              decoration: const BoxDecoration(
-                color: Color(0xd2eef1ed),
-              ),
-              child: const Text(
-                "DIFMO CRM",
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            const ListTile(
-              leading: Icon(Icons.dashboard),
-              title: Text("Dashboard"),
-            ),
-
-
-            ListTile(
-              leading: const Icon(Icons.people),
-              title: const Text("Employees"),
-              onTap: (){
-                Navigator.pop(context);
-
-                Navigator.push(
-                  context, MaterialPageRoute(
-                  builder: (context)=> const EmployeePage(),
-                ),
-                );
-              },
-            ),
-
-            ListTile(
-              leading: const Icon(Icons.time_to_leave),
-              title: const Text("Leave"),
-              onTap: (){
-                Navigator.pop(context);
-
-                Navigator.push(
-                  context, MaterialPageRoute(
-                  builder: (context)=> const MyLeavesPage(),
-                ),
-                );
-              },
-            ),
-
-            ListTile(
-              leading: const Icon(Icons.account_balance_wallet),
-              title: const Text("Finance"),
-              onTap: (){
-                Navigator.pop(context);
-
-                Navigator.push(
-                  context, MaterialPageRoute(
-                  builder: (context)=> const FinanceDashboardPage(),
-                ),
-                );
-              },
-            ),
-
-            ListTile(
-              leading: const Icon(Icons.notifications),
-              title: const Text("Notifications"),
-              onTap: (){
-                Navigator.pop(context);
-
-                Navigator.push(
-                  context, MaterialPageRoute(
-                  builder: (context)=> const NotificationsPage(),
-                ),
-                );
-              },
-            ),
-
-            ListTile(
-              leading: const Icon(Icons.work),
-              title: const Text("Recruitment"),
-              onTap: (){
-                Navigator.pop(context);
-
-                Navigator.push(
-                  context, MaterialPageRoute(
-                  builder: (context)=> const RecruitmentPage(),
-                ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.payments),
-              title: const Text("Pay Roll"),
-              onTap: (){
-                Navigator.pop(context);
-
-                Navigator.push(
-                  context, MaterialPageRoute(
-                  builder: (context)=> const MyPayrollPage(),
-                ),
-                );
-              },
-            ),
-
-            ListTile(
-              leading: const Icon(Icons.how_to_reg),
-              title: const Text("Attendance"),
-              onTap: (){
-                Navigator.pop(context);
-                Navigator.push(
-                  context, MaterialPageRoute(
-                  builder: (context)=> const MyAttendancePage(),
-                ),
-                );
-              },
-            ),
-
-            ListTile(
-              leading: const Icon(Icons.assessment),
-              title: const Text("Reports"),
-              onTap: (){
-                Navigator.pop(context);
-
-                Navigator.push(
-                  context, MaterialPageRoute(
-                  builder: (context)=> const ReportsPage(),
-                ),
-                );
-              },
-            ),
-
-            ListTile(
-              leading: const Icon(Icons.business),
-              title: const Text("Company"),
-              onTap: (){
-                Navigator.pop(context);
-
-                Navigator.push(
-                  context, MaterialPageRoute(
-                  builder: (context)=> const CompanyProfilePage (),
-                ),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-
+      backgroundColor: const Color(0xffF8FAFC), // Slate 50
+      drawer: _buildDrawer(context),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-
+        surfaceTintColor: Colors.transparent,
         leading: Builder(
           builder: (context) => IconButton(
-            icon: const Icon(Icons.menu, color: Color(0xff1D4ED8)),
+            icon: const Icon(Icons.menu, color: Color(0xff0F172A)),
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
-        title: const FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(
-            "DIFMO CRM",
-            style: TextStyle(
-              color: Color(0xff1D4ED8),
-              fontWeight: FontWeight.bold,
-            ),
+        title: const Text(
+          "ADMIN DASHBOARD",
+          style: TextStyle(
+            color: Color(0xff0F172A),
+            fontWeight: FontWeight.w800,
+            fontSize: 16,
+            letterSpacing: 1.2,
           ),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_none, color: Color(0xff64748B)),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const NotificationsPage()),
+              );
+            },
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 16),
             child: GestureDetector(
@@ -267,390 +108,286 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                 );
               },
-              child: const CircleAvatar(
-                backgroundColor: Color(0xff1D4ED8),
+              child: CircleAvatar(
+                backgroundColor: Colors.blue.shade100,
+                radius: 16,
                 child: Text(
-                  "PS",
-                  style: TextStyle(color: Colors.white),
+                  _userName.isNotEmpty ? _userName[0].toUpperCase() : "A",
+                  style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
           ),
         ],
       ),
-
-      body: FutureBuilder<Map<String, dynamic>>(
-        future: _dashboardDataFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final data = snapshot.data ?? {};
-          final totalEmployees = data['totalEmployees']?.toString() ?? "0";
-          final activePersonnel = data['activePersonnel']?.toString() ?? "0";
-          final systemIntegrity = data['systemIntegrity'] ?? "High";
-
-          final healthVal = (data['workspaceHealth'] is num) ? data['workspaceHealth'] : 75;
-          final double healthRatio = healthVal / 100.0;
-          final String healthText = "${healthVal.round()}% Efficiency";
-          
-          final insight = data['automatedInsight'] ?? "All systems operating within normal parameters. No immediate automated actions taken today.";
-          
-          final List<dynamic> actions = data['recentActions'] ?? [
-            {"title": "New Hire: Sarah Chen", "subtitle": "Engineering Department • 2h ago", "status": "Onboarding"},
-            {"title": "Q3 Tax Filing Uploaded", "subtitle": "Finance Suite • 5h ago", "status": "Completed"}
-          ];
-          
+      body: dashboardDataAsync.when(
+        data: (data) {
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Welcome back, $_userName",
+                  "Welcome back, $_userName 👋",
                   style: const TextStyle(
-                    fontSize: 30,
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
+                    color: Color(0xff0F172A),
                   ),
                 ),
-
-                const SizedBox(height: 8),
-
-                Text(
-                  "Here is your workspace overview for today.",
+                const SizedBox(height: 6),
+                const Text(
+                  "Here is what's happening in your workspace today.",
                   style: TextStyle(
-                    color: Colors.grey.shade600,
+                    color: Color(0xff64748B),
+                    fontSize: 15,
                   ),
                 ),
-
                 const SizedBox(height: 24),
-
-                _statCard(
-                  icon: Icons.people,
-                  title: "TOTAL EMPLOYEES",
-                  value: totalEmployees,
-                  tag: "+12%",
-                  tagColor: Colors.green.shade100,
-                ),
-
-                const SizedBox(height: 16),
-
-                _statCard(
-                  icon: Icons.person,
-                  title: "ACTIVE PERSONNEL",
-                  value: activePersonnel,
-                  tag: "Stable",
-                  tagColor: Colors.grey.shade300,
-                ),
-
-                const SizedBox(height: 16),
-
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: const Color(0xff1D4ED8),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "System Integrity $systemIntegrity",
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      const Text(
-                        "All workspace modules are operating within optimal parameters.",
-                        style: TextStyle(
-                          color: Colors.white70,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-              const FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  "Recent Personnel Actions",
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-
-                const SizedBox(height: 16),
-
-                ...actions.map((action) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12.0),
-                    child: _actionTile(
-                      action['title']?.toString() ?? 'Action',
-                      action['subtitle']?.toString() ?? 'Recent',
-                      action['status']?.toString() ?? 'Pending',
+                
+                // Top Metrics Grid
+                GridView.count(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  childAspectRatio: 1.1,
+                  children: [
+                    DashboardStatCard(
+                      icon: Icons.people,
+                      title: "Total Employee",
+                      value: data.totalEmployees.toString(),
+                      tag: "+12%",
+                      tagColor: Colors.green,
+                      iconColor: Colors.blue.shade600,
                     ),
-                  );
-                }),
-
-                const SizedBox(height: 12),
-
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        "Workspace Health",
-                        style: TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-
-                      const SizedBox(height: 15),
-
-                      const Text(
-                        "Your team's productivity and engagement scores are up by 8% this week.",
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: LinearProgressIndicator(
-                          value: healthRatio,
-                          minHeight: 8,
-                        ),
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: Text(
-                          healthText,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      )
-                    ],
-                  ),
+                    DashboardStatCard(
+                      icon: Icons.how_to_reg,
+                      title: "Present Today",
+                      value: data.presentToday.toString(),
+                      tag: "Stable",
+                      tagColor: Colors.grey.shade600,
+                      iconColor: Colors.purple.shade600,
+                    ),
+                    DashboardStatCard(
+                      icon: Icons.trending_up,
+                      title: "Productivity",
+                      value: "${data.productivityPercentage}%",
+                      tag: "+4.2%",
+                      tagColor: Colors.green,
+                      iconColor: Colors.orange.shade600,
+                    ),
+                    DashboardStatCard(
+                      icon: Icons.analytics,
+                      title: "Analytics",
+                      value: data.analyticsActivityCount.toString(),
+                      tag: "Active",
+                      tagColor: Colors.blue,
+                      iconColor: Colors.red.shade600,
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 24),
+                
+                // Attendance Chart
+                AttendanceChartWidget(
+                  trends: data.attendanceTrends,
+                  aggregateEfficiency: data.aggregateEfficiency,
+                  efficiencyChange: data.efficiencyChange,
                 ),
 
                 const SizedBox(height: 24),
 
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: const Color(0xff111827),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(
-                        Icons.auto_awesome,
-                        color: Colors.white,
-                      ),
-                      const SizedBox(height: 20),
-                      const Text(
-                        "Automated Insights",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        insight,
-                        style: const TextStyle(
-                          color: Colors.white70,
-                        ),
-                      ),
-                    ],
-                  ),
+                // Fiscal Summary
+                FiscalSummaryWidget(
+                  turnover: data.turnoverAmount,
+                  netProfit: data.netProfitAmount,
+                  payroll: data.payrollAmount,
+                  expenses: data.expensesAmount,
+                  personnelBudgetPercent: data.personnelBudgetPercent,
+                  resourceBudgetPercent: data.resourceBudgetPercent,
                 ),
 
-                const SizedBox(height: 80),
+                const SizedBox(height: 24),
+
+                // Command Terminal
+                const QuickActionsWidget(),
+
+                const SizedBox(height: 24),
+
+                // Activity Feed
+                ActivityFeedWidget(activities: data.activities),
+
+                const SizedBox(height: 40),
               ],
             ),
           );
-        }
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(child: Text('Error: $err')),
       ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: 0,
-
+        selectedItemColor: const Color(0xff1D4ED8),
+        unselectedItemColor: const Color(0xff64748B),
         onTap: (index) {
           switch (index) {
             case 0:
               break; // Dashboard already open
-
             case 1:
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const EmployeePage(),
-                ),
+                MaterialPageRoute(builder: (context) => const EmployeePage()),
               );
               break;
-
             case 2:
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const MyAttendancePage(),
-                ),
+                MaterialPageRoute(builder: (context) => const MyAttendancePage()),
               );
               break;
-
             case 3:
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const FinanceDashboardPage(),
-                ),
+                MaterialPageRoute(builder: (context) => const FinanceDashboardPage()),
               );
               break;
-
             case 4:
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const CompanyProfilePage(),
-                ),
+                MaterialPageRoute(builder: (context) => const CompanyProfilePage()),
               );
               break;
           }
         },
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
-            label: "Dash Board",
+            icon: Icon(Icons.dashboard_outlined),
+            activeIcon: Icon(Icons.dashboard),
+            label: "Dashboard",
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.people),
+            icon: Icon(Icons.people_outline),
+            activeIcon: Icon(Icons.people),
             label: "Employee",
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.how_to_reg),
+            icon: Icon(Icons.how_to_reg_outlined),
+            activeIcon: Icon(Icons.how_to_reg),
             label: "Attendance",
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.account_balance_wallet),
+            icon: Icon(Icons.account_balance_wallet_outlined),
+            activeIcon: Icon(Icons.account_balance_wallet),
             label: "Finance",
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.business),
-            label: "Company Profile",
+            icon: Icon(Icons.business_outlined),
+            activeIcon: Icon(Icons.business),
+            label: "Company",
           ),
         ],
       ),
     );
   }
 
-  Widget _statCard({
-    required IconData icon,
-    required String title,
-    required String value,
-    required String tag,
-    required Color tagColor,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildDrawer(BuildContext context) {
+    return Drawer(
+      child: ListView(
         children: [
-          Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: Colors.blue.shade50,
-                child: Icon(icon, color: Colors.blue),
-              ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 5,
-                ),
-                decoration: BoxDecoration(
-                  color: tagColor,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(tag),
-              )
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(title),
-          const SizedBox(height: 8),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontSize: 42,
+          DrawerHeader(
+            decoration: const BoxDecoration(
+              color: Color(0xff1D4ED8),
+            ),
+            child: const Text(
+              "DIFMO CRM",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 22,
                 fontWeight: FontWeight.bold,
               ),
             ),
           ),
+          const ListTile(
+            leading: Icon(Icons.dashboard, color: Color(0xff1D4ED8)),
+            title: Text("Dashboard", style: TextStyle(color: Color(0xff1D4ED8), fontWeight: FontWeight.bold)),
+          ),
+          ListTile(
+            leading: const Icon(Icons.people),
+            title: const Text("Employees"),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const EmployeePage()));
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.time_to_leave),
+            title: const Text("Leave"),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const MyLeavesPage()));
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.account_balance_wallet),
+            title: const Text("Finance"),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const FinanceDashboardPage()));
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.notifications),
+            title: const Text("Notifications"),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationsPage()));
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.work),
+            title: const Text("Recruitment"),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const RecruitmentPage()));
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.payments),
+            title: const Text("Pay Roll"),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const MyPayrollPage()));
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.how_to_reg),
+            title: const Text("Attendance"),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const MyAttendancePage()));
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.assessment),
+            title: const Text("Reports"),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const ReportsPage()));
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.business),
+            title: const Text("Company"),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const CompanyProfilePage()));
+            },
+          ),
         ],
-      ),
-    );
-  }
-
-  Widget _actionTile(
-      String title,
-      String subtitle,
-      String status,
-      ) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: ListTile(
-        contentPadding: EdgeInsets.zero,
-        leading: const CircleAvatar(
-          child: Icon(Icons.person),
-        ),
-        title: Text(
-          title,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text(
-          subtitle,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        trailing: Chip(
-          label: Text(status),
-        ),
       ),
     );
   }
