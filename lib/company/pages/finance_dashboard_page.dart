@@ -2,6 +2,8 @@ import 'package:dashflow/company/pages/Add_Expense_Page.dart';
 import 'package:dashflow/company/pages/Add_Income_Page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../services/finance_service.dart';
 
 class FinanceDashboardPage extends ConsumerWidget {
@@ -11,41 +13,36 @@ class FinanceDashboardPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final financeAsync = ref.watch(financeProvider);
 
+    // Premium Color Palette
+    const backgroundColor = Color(0xFFF8FAFC);
+    const primaryBlue = Color(0xFF2563EB);
+    const textDark = Color(0xFF0F172A);
+    const textLight = Color(0xFF64748B);
+    const successGreen = Color(0xFF10B981);
+    const dangerRed = Color(0xFFEF4444);
+
     return Scaffold(
-      backgroundColor: const Color(0xffF5F6FA),
+      backgroundColor: backgroundColor,
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 3,
-        selectedItemColor: const Color(0xff1450D2),
+        selectedItemColor: primaryBlue,
         unselectedItemColor: Colors.black54,
         type: BottomNavigationBarType.fixed,
+        selectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 12),
+        unselectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 12),
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard_outlined),
-            label: "Home",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.groups_outlined),
-            label: "People",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.assignment_outlined),
-            label: "Work",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.account_balance_wallet),
-            label: "Finance",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings_outlined),
-            label: "Settings",
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), label: "Home"),
+          BottomNavigationBarItem(icon: Icon(Icons.groups_outlined), label: "People"),
+          BottomNavigationBarItem(icon: Icon(Icons.assignment_outlined), label: "Work"),
+          BottomNavigationBarItem(icon: Icon(Icons.account_balance_wallet), label: "Finance"),
+          BottomNavigationBarItem(icon: Icon(Icons.settings_outlined), label: "Settings"),
         ],
       ),
       body: SafeArea(
         child: financeAsync.when(
           data: (financeData) {
             return SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -53,136 +50,186 @@ class FinanceDashboardPage extends ConsumerWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.menu,
-                              color: Color(0xff1450D2),
-                              size: 32,
-                            ),
-                            const SizedBox(width: 12),
-                            const Expanded(
-                              child: Text(
-                                "DIFMO Finance",
-                                style: TextStyle(
-                                  color: Color(0xff1450D2),
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.bold,
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.04),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
                                 ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                              ],
+                            ),
+                            child: const Icon(Icons.grid_view_rounded, color: textDark, size: 24),
+                          ),
+                        ],
+                      ),
+                      Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 10,
                             ),
                           ],
                         ),
-                      ),
-                      const CircleAvatar(
-                        radius: 24,
-                        backgroundImage: AssetImage("assets/images/ranjeet.jpg"),
+                        child: const CircleAvatar(
+                          radius: 22,
+                          backgroundImage: AssetImage("assets/images/ranjeet.jpg"),
+                        ),
                       ),
                     ],
                   ),
-
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 32),
 
                   /// TITLE
-                  const Text(
+                  Text(
                     "Fiscal Year 2024",
-                    style: TextStyle(color: Colors.black54, fontSize: 22),
-                  ),
-                  const SizedBox(height: 8),
-                  const FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      "Financial Suite",
-                      style: TextStyle(fontSize: 42, fontWeight: FontWeight.bold),
+                    style: GoogleFonts.inter(
+                      color: primaryBlue,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1.2,
                     ),
                   ),
-
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 8),
+                  Text(
+                    "Financial Suite",
+                    style: GoogleFonts.inter(
+                      fontSize: 36,
+                      fontWeight: FontWeight.w800,
+                      color: textDark,
+                      height: 1.1,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
 
                   /// TURNOVER CARD
                   Container(
-                    padding: const EdgeInsets.all(22),
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(22),
-                      border: const Border(left: BorderSide(color: Color(0xff1450D2), width: 5)),
+                      borderRadius: BorderRadius.circular(28),
                       boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(.05), blurRadius: 10),
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.03),
+                          blurRadius: 24,
+                          offset: const Offset(0, 8),
+                        ),
                       ],
                     ),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Expanded(
-                              child: Text(
-                                "Turnover",
-                                style: TextStyle(color: Colors.black87, fontSize: 20),
-                                overflow: TextOverflow.ellipsis,
+                            Text(
+                              "Total Turnover",
+                              style: GoogleFonts.inter(
+                                color: textLight,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.trending_up, color: Colors.green.shade700),
-                                const SizedBox(width: 4),
-                                Text(
-                                  financeData.turnoverPercent,
-                                  style: TextStyle(
-                                    color: Colors.green.shade700,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 20,
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: successGreen.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.trending_up_rounded, color: successGreen, size: 16),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    financeData.turnoverPercent,
+                                    style: GoogleFonts.inter(
+                                      color: successGreen,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
+                          children: [
+                            Text(
+                              financeData.turnoverAmount,
+                              style: GoogleFonts.inter(
+                                fontSize: 40,
+                                fontWeight: FontWeight.w800,
+                                color: textDark,
+                                letterSpacing: -1,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              "USD",
+                              style: GoogleFonts.inter(
+                                color: textLight,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 32),
+                        /// SPLINE GRAPH
+                        SizedBox(
+                          height: 120,
+                          child: LineChart(
+                            LineChartData(
+                              gridData: FlGridData(show: false),
+                              titlesData: FlTitlesData(show: false),
+                              borderData: FlBorderData(show: false),
+                              lineBarsData: [
+                                LineChartBarData(
+                                  spots: financeData.turnoverGraph.asMap().entries.map((e) {
+                                    return FlSpot(e.key.toDouble(), e.value);
+                                  }).toList(),
+                                  isCurved: true,
+                                  color: primaryBlue,
+                                  barWidth: 4,
+                                  isStrokeCapRound: true,
+                                  dotData: FlDotData(show: false),
+                                  belowBarData: BarAreaData(
+                                    show: true,
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        primaryBlue.withOpacity(0.3),
+                                        primaryBlue.withOpacity(0.0),
+                                      ],
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
-                          ],
+                          ),
                         ),
-                        const SizedBox(height: 20),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Expanded(
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  financeData.turnoverAmount,
-                                  style: const TextStyle(fontSize: 42, fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            const Padding(
-                              padding: EdgeInsets.only(bottom: 6),
-                              child: Text(
-                                "USD",
-                                style: TextStyle(color: Colors.black54, fontSize: 20),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 28),
-                        /// GRAPH
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: List.generate(financeData.turnoverGraph.length, (index) {
-                            return _graphBar(
-                              financeData.turnoverGraph[index],
-                              active: index == financeData.turnoverGraph.length - 1, // last is active
-                            );
-                          }),
-                        )
                       ],
                     ),
                   ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
 
                   /// PROFIT + EXPENSE
                   Row(
@@ -193,17 +240,21 @@ class FinanceDashboardPage extends ConsumerWidget {
                           amount: financeData.netProfitAmount,
                           percent: financeData.netProfitPercent,
                           isPositive: true,
-                          borderColor: Colors.green,
+                          accentColor: successGreen,
+                          textDark: textDark,
+                          textLight: textLight,
                         ),
                       ),
-                      const SizedBox(width: 18),
+                      const SizedBox(width: 20),
                       Expanded(
                         child: _smallFinanceCard(
                           title: "Expenses",
                           amount: financeData.expensesAmount,
                           percent: financeData.expensesPercent,
                           isPositive: false,
-                          borderColor: Colors.red,
+                          accentColor: dangerRed,
+                          textDark: textDark,
+                          textLight: textLight,
                         ),
                       ),
                     ],
@@ -212,82 +263,78 @@ class FinanceDashboardPage extends ConsumerWidget {
                   const SizedBox(height: 40),
 
                   /// BUDGET DISTRIBUTION
-                  const Text(
+                  Text(
                     "Budget Distribution",
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                    style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w700, color: textDark),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(28),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(28),
                       boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(.05), blurRadius: 10),
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.03),
+                          blurRadius: 24,
+                          offset: const Offset(0, 8),
+                        ),
                       ],
                     ),
                     child: Column(
                       children: [
-                        /// DONUT CHART
                         SizedBox(
-                          height: 300,
-                          width: 300,
+                          height: 220,
                           child: Stack(
                             alignment: Alignment.center,
                             children: [
-                              SizedBox(
-                                height: 250,
-                                width: 250,
-                                child: CircularProgressIndicator(
-                                  value: financeData.payrollPercent,
-                                  strokeWidth: 26,
-                                  backgroundColor: Colors.greenAccent.shade100,
-                                  color: const Color(0xff1450D2),
-                                ),
-                              ),
-                              SizedBox(
-                                height: 170,
-                                width: 170,
-                                child: CircularProgressIndicator(
-                                  value: financeData.marketingPercent,
-                                  strokeWidth: 26,
-                                  backgroundColor: Colors.transparent,
-                                  color: Colors.greenAccent,
+                              PieChart(
+                                PieChartData(
+                                  sectionsSpace: 4,
+                                  centerSpaceRadius: 75,
+                                  sections: [
+                                    PieChartSectionData(
+                                      color: primaryBlue,
+                                      value: financeData.payrollPercent * 100,
+                                      title: '',
+                                      radius: 24,
+                                    ),
+                                    PieChartSectionData(
+                                      color: successGreen,
+                                      value: financeData.marketingPercent * 100,
+                                      title: '',
+                                      radius: 24,
+                                    ),
+                                    PieChartSectionData(
+                                      color: const Color(0xFFF59E0B),
+                                      value: financeData.operationsPercent * 100,
+                                      title: '',
+                                      radius: 24,
+                                    ),
+                                  ],
                                 ),
                               ),
                               Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Text("Total", style: TextStyle(color: Colors.black54, fontSize: 24)),
-                                  const SizedBox(height: 6),
+                                  Text("Total", style: GoogleFonts.inter(color: textLight, fontSize: 16)),
+                                  const SizedBox(height: 4),
                                   Text(
                                     financeData.totalBudget,
-                                    style: const TextStyle(fontSize: 38, fontWeight: FontWeight.bold),
+                                    style: GoogleFonts.inter(fontSize: 28, fontWeight: FontWeight.w800, color: textDark),
                                   ),
                                 ],
                               ),
                             ],
                           ),
                         ),
-                        const SizedBox(height: 30),
-                        _legendTile(
-                          color: const Color(0xff1450D2),
-                          title: "Payroll",
-                          value: "${(financeData.payrollPercent * 100).toInt()}%",
-                        ),
-                        const SizedBox(height: 18),
-                        _legendTile(
-                          color: Colors.greenAccent,
-                          title: "Marketing",
-                          value: "${(financeData.marketingPercent * 100).toInt()}%",
-                        ),
-                        const SizedBox(height: 18),
-                        _legendTile(
-                          color: const Color(0xffA86B00),
-                          title: "Operations",
-                          value: "${(financeData.operationsPercent * 100).toInt()}%",
-                        ),
+                        const SizedBox(height: 32),
+                        _legendTile(color: primaryBlue, title: "Payroll", value: "${(financeData.payrollPercent * 100).toInt()}%", textDark: textDark),
+                        const SizedBox(height: 16),
+                        _legendTile(color: successGreen, title: "Marketing", value: "${(financeData.marketingPercent * 100).toInt()}%", textDark: textDark),
+                        const SizedBox(height: 16),
+                        _legendTile(color: const Color(0xFFF59E0B), title: "Operations", value: "${(financeData.operationsPercent * 100).toInt()}%", textDark: textDark),
                       ],
                     ),
                   ),
@@ -298,27 +345,29 @@ class FinanceDashboardPage extends ConsumerWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Expanded(
-                        child: Text(
-                          "Recent Transactions",
-                          style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                      Text(
+                        "Recent Transactions",
+                        style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w700, color: textDark),
                       ),
-                      const SizedBox(width: 8),
-                      Text("View All", style: TextStyle(color: const Color(0xff1450D2), fontSize: 16)),
+                      Text(
+                        "View All",
+                        style: GoogleFonts.inter(color: primaryBlue, fontSize: 15, fontWeight: FontWeight.w600),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
 
                   /// TRANSACTIONS LIST
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(22),
+                      borderRadius: BorderRadius.circular(28),
                       boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(.05), blurRadius: 10),
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.03),
+                          blurRadius: 24,
+                          offset: const Offset(0, 8),
+                        ),
                       ],
                     ),
                     child: Column(
@@ -329,78 +378,70 @@ class FinanceDashboardPage extends ConsumerWidget {
                         return Column(
                           children: [
                             _transactionTile(
-                              icon: tx.isExpense ? Icons.cloud_upload_outlined : Icons.account_balance,
+                              icon: tx.isExpense ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
                               title: tx.title,
                               time: tx.time,
                               amount: tx.amount,
                               isExpense: tx.isExpense,
-                              iconColor: tx.isExpense ? Colors.blue : Colors.green, // simplifying logic
+                              iconColor: tx.isExpense ? textDark : successGreen,
+                              textDark: textDark,
+                              textLight: textLight,
                             ),
                             if (idx != financeData.recentTransactions.length - 1)
-                              const Divider(height: 1),
+                              Divider(height: 1, color: Colors.grey.withOpacity(0.1), indent: 24, endIndent: 24),
                           ],
                         );
                       }).toList(),
                     ),
                   ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 32),
 
-                  /// ADD INCOME + ADD EXPENSE BUTTONS
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => const AddIncomePage()));
-                      },
-                      icon: const Icon(Icons.add, size: 22),
-                      label: const Text("Add Income", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green.shade600,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        elevation: 2,
+                  /// ACTION BUTTONS
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(context, MaterialPageRoute(builder: (context) => const AddIncomePage()));
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: textDark,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 20),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          ),
+                          child: Text("Add Income", style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+                        ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => const AddExpensePage()));
-                      },
-                      icon: const Icon(Icons.remove, size: 22),
-                      label: const Text("Add Expense", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red.shade500,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        elevation: 2,
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(context, MaterialPageRoute(builder: (context) => const AddExpensePage()));
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: textDark,
+                            padding: const EdgeInsets.symmetric(vertical: 20),
+                            elevation: 0,
+                            side: const BorderSide(color: Color(0xFFE2E8F0), width: 1),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          ),
+                          child: Text("Add Expense", style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                   const SizedBox(height: 40),
                 ],
               ),
             );
           },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, stack) => Center(child: Text("Error: $err")),
+          loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF2563EB))),
+          error: (err, stack) => Center(child: Text("Error: $err", style: GoogleFonts.inter(color: Colors.red))),
         ),
-      ),
-    );
-  }
-
-  Widget _graphBar(double height, {bool active = false}) {
-    return Container(
-      width: 36,
-      height: height,
-      decoration: BoxDecoration(
-        color: active ? const Color(0xff1450D2) : Colors.blue.shade100,
-        borderRadius: BorderRadius.circular(6),
       ),
     );
   }
@@ -410,30 +451,58 @@ class FinanceDashboardPage extends ConsumerWidget {
     required String amount,
     required String percent,
     required bool isPositive,
-    required Color borderColor,
+    required Color accentColor,
+    required Color textDark,
+    required Color textLight,
   }) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border(left: BorderSide(color: borderColor, width: 5)),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(.05), blurRadius: 10),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(color: Colors.black87, fontSize: 20)),
-          const SizedBox(height: 18),
-          Text(amount, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 14),
           Row(
             children: [
-              Icon(isPositive ? Icons.arrow_upward : Icons.arrow_downward, color: borderColor, size: 20),
-              const SizedBox(width: 6),
-              Text(percent, style: TextStyle(color: borderColor, fontSize: 20)),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: accentColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  isPositive ? Icons.account_balance_wallet_rounded : Icons.receipt_long_rounded,
+                  color: accentColor,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: GoogleFonts.inter(color: textLight, fontSize: 14, fontWeight: FontWeight.w500),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(amount, style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w800, color: textDark)),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(isPositive ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded, color: accentColor, size: 14),
+              const SizedBox(width: 4),
+              Text(percent, style: GoogleFonts.inter(color: accentColor, fontSize: 13, fontWeight: FontWeight.w600)),
             ],
           ),
         ],
@@ -441,13 +510,17 @@ class FinanceDashboardPage extends ConsumerWidget {
     );
   }
 
-  Widget _legendTile({required Color color, required String title, required String value}) {
+  Widget _legendTile({required Color color, required String title, required String value, required Color textDark}) {
     return Row(
       children: [
-        CircleAvatar(radius: 8, backgroundColor: color),
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4)),
+        ),
         const SizedBox(width: 16),
-        Expanded(child: Text(title, style: const TextStyle(fontSize: 20))),
-        Text(value, style: const TextStyle(fontSize: 20)),
+        Expanded(child: Text(title, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w500, color: textDark))),
+        Text(value, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: textDark)),
       ],
     );
   }
@@ -459,6 +532,8 @@ class FinanceDashboardPage extends ConsumerWidget {
     required String amount,
     required bool isExpense,
     required Color iconColor,
+    required Color textDark,
+    required Color textLight,
   }) {
     return Padding(
       padding: const EdgeInsets.all(20),
@@ -467,28 +542,28 @@ class FinanceDashboardPage extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(.1),
-              borderRadius: BorderRadius.circular(14),
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(16),
             ),
-            child: Icon(icon, color: iconColor),
+            child: Icon(icon, color: iconColor, size: 24),
           ),
-          const SizedBox(width: 18),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 6),
-                Text(time, style: const TextStyle(color: Colors.black54, fontSize: 18)),
+                Text(title, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: textDark)),
+                const SizedBox(height: 4),
+                Text(time, style: GoogleFonts.inter(color: textLight, fontSize: 13, fontWeight: FontWeight.w500)),
               ],
             ),
           ),
           Text(
             amount,
-            style: TextStyle(
-              color: isExpense ? Colors.red : Colors.green.shade700,
-              fontWeight: FontWeight.bold,
-              fontSize: 22,
+            style: GoogleFonts.inter(
+              color: isExpense ? textDark : const Color(0xFF10B981),
+              fontWeight: FontWeight.w700,
+              fontSize: 16,
             ),
           ),
         ],
