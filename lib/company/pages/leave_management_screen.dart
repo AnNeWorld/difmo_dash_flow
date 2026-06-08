@@ -211,58 +211,64 @@ class _LeaveManagementScreenState extends ConsumerState<LeaveManagementScreen> {
                 const SizedBox(height: 24),
 
                 // Horizontally Scrollable Table Area
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(minWidth: 900),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Table Header
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                          child: Row(
-                            children: [
-                              Expanded(flex: 2, child: _buildColHeader("EMPLOYEE INFO")),
-                              Expanded(flex: 1, child: _buildColHeader("CATEGORY")),
-                              Expanded(flex: 1, child: _buildColHeader("SCHEDULE")),
-                              Expanded(flex: 1, child: _buildColHeader("VERIFICATION")),
-                              SizedBox(width: 150, child: _buildColHeader("ACTIONS", alignRight: true)),
-                            ],
-                          ),
-                        ),
-
-                        // List of Leaves
-                        if (filteredLeaves.isEmpty)
-                          const Padding(
-                            padding: EdgeInsets.all(32),
-                            child: Center(
-                              child: Text(
-                                "No leave requests found.",
-                                style: TextStyle(color: Colors.grey),
+                LayoutBuilder(
+                  builder: (context, outerConstraints) {
+                    final tableWidth = outerConstraints.maxWidth > 900
+                        ? outerConstraints.maxWidth
+                        : 900.0;
+                    return SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SizedBox(
+                        width: tableWidth,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // Table Header
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                              child: Row(
+                                children: [
+                                  Expanded(flex: 2, child: _buildColHeader("EMPLOYEE INFO")),
+                                  Expanded(flex: 1, child: _buildColHeader("CATEGORY")),
+                                  Expanded(flex: 1, child: _buildColHeader("SCHEDULE")),
+                                  Expanded(flex: 1, child: _buildColHeader("VERIFICATION")),
+                                  SizedBox(width: 150, child: _buildColHeader("ACTIONS", alignRight: true)),
+                                ],
                               ),
                             ),
-                          )
-                        else
-                          ListView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: filteredLeaves.length,
-                            itemBuilder: (context, index) {
-                              final leave = filteredLeaves[index];
-                              // Allow user to manually toggle expansion
-                              final isExpanded = _expandedLeaves.contains(leave.id);
-                              
-                              if (isExpanded && !_remarkControllers.containsKey(leave.id)) {
-                                _remarkControllers[leave.id] = TextEditingController(text: leave.adminRemark);
-                              }
 
-                              return _buildLeaveCard(leave, isExpanded);
-                            },
-                          ),
-                      ],
-                    ),
-                  ),
+                            // List of Leaves
+                            if (filteredLeaves.isEmpty)
+                              const Padding(
+                                padding: EdgeInsets.all(32),
+                                child: Center(
+                                  child: Text(
+                                    "No leave requests found.",
+                                    style: TextStyle(color: Colors.grey),
+                                  ),
+                                ),
+                              )
+                            else
+                              ListView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: filteredLeaves.length,
+                                itemBuilder: (context, index) {
+                                  final leave = filteredLeaves[index];
+                                  final isExpanded = _expandedLeaves.contains(leave.id);
+
+                                  if (isExpanded && !_remarkControllers.containsKey(leave.id)) {
+                                    _remarkControllers[leave.id] = TextEditingController(text: leave.adminRemark);
+                                  }
+
+                                  return _buildLeaveCard(leave, isExpanded);
+                                },
+                              ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ],
             ),

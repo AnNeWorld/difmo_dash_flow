@@ -6,6 +6,7 @@ import 'dart:convert';
 
 import 'package:dashflow/features/auth/pages/login_screen.dart';
 import 'package:dashflow/company/pages/dashboard_page.dart' as company_dashboard;
+import 'package:dashflow/company/pages/admin_shell.dart';
 import 'package:dashflow/shared/components/bottom_bar.dart';
 
 import 'package:dashflow/company/services/api_service.dart' as company_api;
@@ -69,7 +70,7 @@ void main() async {
       } catch (_) {}
     }
     if (isAdmin) {
-      initialScreen = const company_dashboard.DashboardPage();
+      initialScreen = const AdminShell();
     } else {
       initialScreen = const BottomBarWidget();
     }

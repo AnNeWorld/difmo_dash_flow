@@ -1,7 +1,7 @@
 import 'package:dashflow/company/pages/Recruitment_page.dart';
 import 'package:dashflow/company/pages/company_profile_page.dart';
 import 'package:dashflow/company/pages/employees_page.dart';
-import 'package:dashflow/company/pages/finance_dashboard_page.dart';
+import 'package:dashflow/company/pages/finance_screen.dart';
 import 'package:dashflow/company/pages/my_attendance_page.dart';
 import 'package:dashflow/company/pages/my_leaves_page.dart';
 import 'package:dashflow/company/pages/my_payroll_page.dart';
@@ -229,69 +229,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('Error: $err')),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        currentIndex: 0,
-        selectedItemColor: const Color(0xff1D4ED8),
-        unselectedItemColor: const Color(0xff64748B),
-        onTap: (index) {
-          switch (index) {
-            case 0:
-              break; // Dashboard already open
-            case 1:
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const EmployeePage()),
-              );
-              break;
-            case 2:
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const MyAttendancePage()),
-              );
-              break;
-            case 3:
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const FinanceDashboardPage()),
-              );
-              break;
-            case 4:
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const CompanyProfilePage()),
-              );
-              break;
-          }
-        },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard_outlined),
-            activeIcon: Icon(Icons.dashboard),
-            label: "Dashboard",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people_outline),
-            activeIcon: Icon(Icons.people),
-            label: "Employee",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.how_to_reg_outlined),
-            activeIcon: Icon(Icons.how_to_reg),
-            label: "Attendance",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.account_balance_wallet_outlined),
-            activeIcon: Icon(Icons.account_balance_wallet),
-            label: "Finance",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.business_outlined),
-            activeIcon: Icon(Icons.business),
-            label: "Company",
-          ),
-        ],
-      ),
     );
   }
 
@@ -337,7 +274,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             title: const Text("Finance"),
             onTap: () {
               Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const FinanceDashboardPage()));
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const FinanceScreen()));
             },
           ),
           ListTile(

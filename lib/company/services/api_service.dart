@@ -13,6 +13,9 @@ class ApiService {
   factory ApiService() {
     return _instance;
   }
+  
+  Dio get dio => _dio;
+
   ApiService._internal() {
     _dio = Dio(
       BaseOptions(

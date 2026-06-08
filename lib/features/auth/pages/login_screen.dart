@@ -3,7 +3,7 @@ import 'package:dashflow/features/auth/pages/account_activate_screen.dart';
 import 'package:dashflow/features/auth/pages/forgot_password_screen.dart';
 import 'package:dashflow/core/api/api_service.dart';
 import 'package:dashflow/shared/components/bottom_bar.dart';
-import 'package:dashflow/company/pages/dashboard_page.dart' as company_dashboard;
+import 'package:dashflow/company/pages/admin_shell.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -85,7 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (_) => const company_dashboard.DashboardPage(),
+              builder: (_) => const AdminShell(),
             ),
           );
         } else {
