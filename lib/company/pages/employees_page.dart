@@ -32,7 +32,10 @@ class EmployeePage extends ConsumerWidget {
     return Scaffold(
       backgroundColor: const Color(0xffF4F7FC),
       appBar: AppBar(
-        title: const Text('Employee Directory', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Employee Directory',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
         backgroundColor: Colors.white,
         foregroundColor: Colors.indigo,
@@ -49,13 +52,12 @@ class EmployeePage extends ConsumerWidget {
             itemBuilder: (context, index) {
               final employee = employees[index];
 
-              return Card(
-                elevation: 1,
-                color: Colors.white,
-                margin: const EdgeInsets.only(bottom: 16),
-                shape: RoundedRectangleBorder(
+              return Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(color: Colors.grey.shade200),
+                  border: Border.all(color: Colors.grey.shade200),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -65,7 +67,9 @@ class EmployeePage extends ConsumerWidget {
                         radius: 28,
                         backgroundColor: Colors.indigo.shade50,
                         child: Text(
-                          employee.fullName.isNotEmpty ? employee.fullName[0].toUpperCase() : 'E',
+                          employee.fullName.isNotEmpty
+                              ? employee.fullName[0].toUpperCase()
+                              : 'E',
                           style: TextStyle(
                             color: Colors.indigo.shade700,
                             fontSize: 20,
@@ -98,12 +102,19 @@ class EmployeePage extends ConsumerWidget {
                             const SizedBox(height: 6),
                             Row(
                               children: [
-                                Icon(Icons.email, size: 14, color: Colors.grey.shade500),
+                                Icon(
+                                  Icons.email,
+                                  size: 14,
+                                  color: Colors.grey.shade500,
+                                ),
                                 const SizedBox(width: 6),
                                 Expanded(
                                   child: Text(
                                     employee.email,
-                                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.grey.shade600,
+                                    ),
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
@@ -111,7 +122,10 @@ class EmployeePage extends ConsumerWidget {
                             ),
                             const SizedBox(height: 6),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.green.shade50,
                                 borderRadius: BorderRadius.circular(12),
@@ -135,16 +149,28 @@ class EmployeePage extends ConsumerWidget {
                             onPressed: () {
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(builder: (_) => EditEmployeeScreen(employee: employee)),
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      EditEmployeeScreen(employee: employee),
+                                ),
                               );
                             },
                           ),
                           IconButton(
-                            icon: const Icon(Icons.delete_outline, color: Colors.red),
+                            icon: const Icon(
+                              Icons.delete_outline,
+                              color: Colors.red,
+                            ),
                             onPressed: () {
-                              ref.read(employeeProvider.notifier).deleteEmployee(employee.id);
+                              ref
+                                  .read(employeeProvider.notifier)
+                                  .deleteEmployee(employee.id);
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('${employee.fullName} deleted.')),
+                                SnackBar(
+                                  content: Text(
+                                    '${employee.fullName} deleted.',
+                                  ),
+                                ),
                               );
                             },
                           ),
@@ -169,7 +195,10 @@ class EmployeePage extends ConsumerWidget {
         },
         backgroundColor: Colors.indigo,
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text("Add Employee", style: TextStyle(color: Colors.white)),
+        label: const Text(
+          "Add Employee",
+          style: TextStyle(color: Colors.white),
+        ),
       ),
     );
   }
