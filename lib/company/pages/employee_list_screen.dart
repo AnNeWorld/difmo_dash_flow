@@ -322,9 +322,16 @@ class _EmployeesListScreenState extends ConsumerState<EmployeesListScreen>
                 itemCount: filteredEmployees.length,
                 itemBuilder: (context, index) {
                   final emp = filteredEmployees[index];
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    padding: const EdgeInsets.all(20),
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => EditEmployeeScreen(employee: emp)),
+                      );
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
@@ -573,8 +580,9 @@ class _EmployeesListScreenState extends ConsumerState<EmployeesListScreen>
                         ),
                       ],
                     ),
-                  );
-                },
+                  ),
+                );
+              },
               ),
               const SizedBox(height: 32),
             ],

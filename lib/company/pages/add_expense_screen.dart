@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../models/transaction_model.dart';
 
 class AddExpenseScreen extends StatefulWidget {
   const AddExpenseScreen({super.key});
@@ -8,10 +10,22 @@ class AddExpenseScreen extends StatefulWidget {
 }
 
 class _AddExpenseScreenState extends State<AddExpenseScreen> {
+  final TextEditingController _amountController = TextEditingController();
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _descController = TextEditingController();
+
   String _category = 'Operating';
   String _status = 'Paid / Done';
   String _paymentType = 'DEBIT (Out)';
   DateTime _selectedDate = DateTime.now();
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    _titleController.dispose();
+    _descController.dispose();
+    super.dispose();
+  }
 
   final _categories = ['Operating', 'Payroll', 'Infrastructure', 'Other'];
   final _statuses = ['Paid / Done', 'Pending', 'Cancelled'];
@@ -25,7 +39,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Color(0xff0F172A)),
         title: const Text(
-          "Add New Expense",
+          "New Entry",
           style: TextStyle(
             color: Color(0xff0F172A),
             fontSize: 16,
@@ -54,32 +68,23 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  "Add New Expense",
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F172A),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
                   "Record a company outflow or credit.",
                   style: TextStyle(color: Color(0xFF64748B), fontSize: 14),
                 ),
                 const SizedBox(height: 32),
                 _buildLabel(Icons.currency_rupee, "Amount *"),
                 const SizedBox(height: 8),
-                _buildTextField(hint: "₹ 0.00", keyboardType: TextInputType.number),
+                _buildTextField(hint: "₹ 0.00", keyboardType: TextInputType.number, controller: _amountController),
                 
                 const SizedBox(height: 24),
                 _buildLabel(Icons.title, "Title *"),
                 const SizedBox(height: 8),
-                _buildTextField(hint: "e.g. Monthly Rent, Office Snacks, AWS Bill"),
+                _buildTextField(hint: "e.g. Monthly Rent, Office Snacks, AWS Bill", controller: _titleController),
                 
                 const SizedBox(height: 24),
                 _buildLabel(null, "Description (Optional)"),
                 const SizedBox(height: 8),
-                _buildTextField(hint: "Additional details..", maxLines: 3),
+                _buildTextField(hint: "Additional details..", maxLines: 3, controller: _descController),
                 
                 const SizedBox(height: 24),
                 Row(
@@ -196,8 +201,22 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {
-                          // TODO: Implement save
-                          Navigator.pop(context);
+                          if (_amountController.text.isEmpty || _titleController.text.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please fill required fields")));
+                            return;
+                          }
+                          final newTx = TransactionModel(
+                            id: DateTime.now().millisecondsSinceEpoch.toString(),
+                            title: _titleController.text,
+                            description: _descController.text,
+                            category: _category.toUpperCase(),
+                            date: DateFormat('MMM dd, yyyy').format(_selectedDate),
+                            amount: _amountController.text,
+                            type: _paymentType.contains("DEBIT") ? "DEBIT" : "CREDIT",
+                          );
+                          TransactionModel.addMockTransaction(newTx);
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Expense Added Successfully")));
+                          Navigator.pop(context, true);
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF2563EB),
@@ -240,8 +259,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     );
   }
 
-  Widget _buildTextField({required String hint, int maxLines = 1, TextInputType? keyboardType}) {
+  Widget _buildTextField({required String hint, int maxLines = 1, TextInputType? keyboardType, TextEditingController? controller}) {
     return TextField(
+      controller: controller,
       maxLines: maxLines,
       keyboardType: keyboardType,
       decoration: InputDecoration(

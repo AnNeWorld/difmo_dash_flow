@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dashflow/company/components/shared/app_drawer.dart';
 
 class ReportsPage extends StatelessWidget {
   const ReportsPage({super.key});
@@ -7,11 +8,17 @@ class ReportsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xffF5F6FA),
-
+      drawer: const AppDrawer(activeRoute: 'Reports'),
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.white,
         centerTitle: true,
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
         title: const Text(
           "Reports Dashboard",
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),

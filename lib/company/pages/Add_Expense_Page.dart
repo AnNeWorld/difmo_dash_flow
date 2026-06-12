@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../models/transaction_model.dart';
 
 class AddExpensePage extends StatefulWidget {
   const AddExpensePage({super.key});
@@ -172,6 +174,17 @@ class _AddExpensePageState extends State<AddExpensePage> {
                       ),
 
                       onPressed: () {
+                        final newTx = TransactionModel(
+                          id: DateTime.now().millisecondsSinceEpoch.toString(),
+                          title: titleController.text.isNotEmpty ? titleController.text : 'New Expense',
+                          description: noteController.text,
+                          category: 'OPERATING',
+                          date: DateFormat('MMM dd, yyyy').format(DateTime.now()),
+                          amount: amountController.text.isNotEmpty ? amountController.text : '0',
+                          type: 'DEBIT',
+                        );
+                        TransactionModel.addMockTransaction(newTx);
+
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text("Expense Added Successfully"),
@@ -182,7 +195,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
                         amountController.clear();
                         noteController.clear();
 
-                        Navigator.pop(context);
+                        Navigator.pop(context, true);
                       },
 
                       icon: const Icon(Icons.remove, color: Colors.white),

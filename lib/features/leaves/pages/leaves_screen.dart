@@ -890,60 +890,7 @@ class _LeaveScreenState extends State<LeaveScreen>
                   ),
                 ),
                 const SizedBox(height: 32),
-                if (leave.status == LeaveStatus.awaiting) ...[
-                  Row(
-                    children: [
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => _changeLeaveStatus(leave.id, 'DECLINED'),
-                          child: Container(
-                            height: 52,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFCE8E6),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: const Color(0xFFC5221F), width: 1.5),
-                            ),
-                            child: const Center(
-                              child: Text(
-                                'Decline',
-                                style: TextStyle(
-                                  color: Color(0xFFC5221F),
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => _changeLeaveStatus(leave.id, 'APPROVED'),
-                          child: Container(
-                            height: 52,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFE6F4EA),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: const Color(0xFF137333), width: 1.5),
-                            ),
-                            child: const Center(
-                              child: Text(
-                                'Approve',
-                                style: TextStyle(
-                                  color: Color(0xFF137333),
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                ],
+
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
                   child: Container(

@@ -21,7 +21,8 @@ class FiscalSummaryWidget extends StatelessWidget {
   });
 
   String _formatCurrency(double amount) {
-    return NumberFormat.compactCurrency(symbol: '\$').format(amount);
+    String compacted = NumberFormat.compact(locale: 'en_US').format(amount);
+    return '₹$compacted';
   }
 
   @override

@@ -2,6 +2,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import '../models/employee_model.dart';
 import 'package:dashflow/company/services/api_service.dart' as company_api;
+import 'package:dashflow/core/api/api_service.dart' as core_api;
+
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class EmployeeService extends StateNotifier<AsyncValue<List<EmployeeModel>>> {
   EmployeeService() : super(const AsyncValue.loading()) {
@@ -11,13 +15,49 @@ class EmployeeService extends StateNotifier<AsyncValue<List<EmployeeModel>>> {
   Future<void> fetchEmployees() async {
     state = const AsyncValue.loading();
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final userStr = prefs.getString('user');
+      String companyId = '';
+      if (userStr != null) {
+        final user = jsonDecode(userStr);
+        companyId = user['companyId']?.toString() ?? (user['company'] is Map ? (user['company']['id']?.toString() ?? user['company']['_id']?.toString()) : user['company']?.toString()) ?? '';
+      }
+
       final list = await company_api.ApiService().getAllEmployees(
         department: '',
         branch: '',
         employmentType: '',
         status: '',
-        companyId: '1e96499e-c166-4234-93a4-29049f45d28e',
+        companyId: companyId.isNotEmpty ? companyId : null,
       );
+      
+      try {
+        final coreEmployees = await core_api.ApiService.getEmployees();
+        for (var e in coreEmployees) {
+          final id1 = e['id']?.toString() ?? e['_id']?.toString();
+          bool exists = false;
+          if (id1 != null && id1.isNotEmpty) {
+            exists = list.any((item) {
+              final id2 = item['id']?.toString() ?? item['_id']?.toString();
+              return id1 == id2;
+            });
+          }
+          if (!exists) {
+            list.add(e);
+          }
+        }
+      } catch (_) {}
+
+      if (list.isEmpty) {
+        try {
+          if (userStr != null) {
+            final userObj = jsonDecode(userStr);
+            userObj['_id'] ??= userObj['id'] ?? 'self-user';
+            list.add(userObj);
+          }
+        } catch (_) {}
+      }
+
       final employees = list.map((e) => EmployeeModel.fromJson(e)).toList();
       state = AsyncValue.data(employees);
     } catch (e, st) {

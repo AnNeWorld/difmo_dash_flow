@@ -1,4 +1,4 @@
-export '../../core/api/api_service.dart';
+import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
 
@@ -13,15 +13,15 @@ class ApiService {
   factory ApiService() {
     return _instance;
   }
-  
+
   Dio get dio => _dio;
 
   ApiService._internal() {
     _dio = Dio(
       BaseOptions(
         baseUrl: BASE_URL,
-        connectTimeout: const Duration(seconds: 10),
-        receiveTimeout: const Duration(seconds: 10),
+        connectTimeout: const Duration(seconds: 60),
+        receiveTimeout: const Duration(seconds: 60),
         contentType: 'application/json',
       ),
     );
@@ -30,7 +30,7 @@ class ApiService {
       LogInterceptor(
         request: true,
         requestBody: true,
-        responseBody: false, // Turned off to prevent flooding the terminal with JSON data
+        responseBody: false,
         requestHeader: true,
         error: true,
       ),
@@ -39,8 +39,14 @@ class ApiService {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          String token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InByaXRhbUBkaWZtby5jb20iLCJzdWIiOiI0YmFjYzczMy1mNTY4LTRmODUtODE1Yy1mMTM2MTU0MWJhMmIiLCJjb21wYW55SWQiOiIxZTk2NDk5ZS1jMTY2LTQyMzQtOTNhNC0yOTA0OWY0NWQyOGUiLCJyb2xlcyI6W3siaWQiOiIyOGFjMWUwNS00YmRlLTQ5MjEtYTAyYS1jN2MzOWE4NDgxODMiLCJuYW1lIjoiQURNSU4iLCJkZXNjcmlwdGlvbiI6IlN1cGVyIEFkbWluIiwicGVybWlzc2lvbnMiOlt7ImlkIjoiYmIzNzZhMGItNjQ5OC00MGE3LTg1MDMtYTI5YzVmM2M2YTA4IiwiYWN0aW9uIjoiY3JlYXRlIiwicmVzb3VyY2UiOiJhdHRlbmRhbmNlIiwiZGVzY3JpcHRpb24iOm51bGwsImNvbmRpdGlvbnMiOm51bGx9LHsiaWQiOiJmOGJhZDkyZC1jYTVjLTQzYzYtOGRmZi02ODA5ODcwNjk5ZmIiLCJhY3Rpb24iOiJjcmVhdGUiLCJyZXNvdXJjZSI6InJvbGUiLCJkZXNjcmlwdGlvbiI6bnVsbCwiY29uZGl0aW9ucyI6bnVsbH0seyJpZCI6Ijc1MDJhZmIxLWVkMGUtNGE1ZC04MDBkLWRmMGY3MWZjODQzNCIsImFjdGlvbiI6InJlYWQiLCJyZXNvdXJjZSI6InJvbGUiLCJkZXNjcmlwdGlvbiI6bnVsbCwiY29uZGl0aW9ucyI6bnVsbH0seyJpZCI6ImIxNjIwOTIyLTZmZWYtNDZlNy04NzE2LTZkNjY2ZWEwZmEyNCIsImFjdGlvbiI6InVwZGF0ZSIsInJlc291cmNlIjoicm9sZSIsImRlc2NyaXB0aW9uIjpudWxsLCJjb25kaXRpb25zIjpudWxsfSx7ImlkIjoiMGM4MjU1NTUtN2EyYy00MjQ1LWIxMDEtZGNkNGMwYjJiY2Q4IiwiYWN0aW9uIjoiZGVsZXRlIiwicmVzb3VyY2UiOiJyb2xlIiwiZGVzY3JpcHRpb24iOm51bGwsImNvbmRpdGlvbnMiOm51bGx9LHsiaWQiOiI2MWY2Y2NhMy1jYzMyLTRiMTQtOWEyNy1hMTg3Y2M1OWU4MzciLCJhY3Rpb24iOiJtYW5hZ2UiLCJyZXNvdXJjZSI6InJvbGUiLCJkZXNjcmlwdGlvbiI6bnVsbCwiY29uZGl0aW9ucyI6bnVsbH0seyJpZCI6ImZkNThlNzczLTdhZTUtNDYzYy04YTcwLTJkNmRiNjEwYTY5OCIsImFjdGlvbiI6ImNyZWF0ZSIsInJlc291cmNlIjoicGVybWlzc2lvbiIsImRlc2NyaXB0aW9uIjpudWxsLCJjb25kaXRpb25zIjpudWxsfSx7ImlkIjoiOTMwMTM5NmQtNmExYy00YjY2LWE0OTAtYWU3NDUyN2I0MzI3IiwiYWN0aW9uIjoicmVhZCIsInJlc291cmNlIjoicGVybWlzc2lvbiIsImRlc2NyaXB0aW9uIjpudWxsLCJjb25kaXRpb25zIjpudWxsfSx7ImlkIjoiZjVhYzMxOWYtZjhhMC00OTZhLWI3YTUtYjY4NTY5NjczYzUwIiwiYWN0aW9uIjoidXBkYXRlIiwicmVzb3VyY2UiOiJwZXJtaXNzaW9uIiwiZGVzY3JpcHRpb24iOm51bGwsImNvbmRpdGlvbnMiOm51bGx9LHsiaWQiOiIzNGM0OTUzYi1lZjNhLTQwYzktODU2OS1kY2MzMmQwNDAyYzgiLCJhY3Rpb24iOiJkZWxldGUiLCJyZXNvdXJjZSI6InBlcm1pc3Npb24iLCJkZXNjcmlwdGlvbiI6bnVsbCwiY29uZGl0aW9ucyI6bnVsbH0seyJpZCI6ImI1MTk4NWJiLWQ1MGYtNGZjMi1iMjliLTE3NDM4NmI2MTg4NyIsImFjdGlvbiI6Im1hbmFnZSIsInJlc291cmNlIjoicGVybWlzc2lvbiIsImRlc2NyaXB0aW9uIjpudWxsLCJjb25kaXRpb25zIjpudWxsfSx7ImlkIjoiNzc3ZDRlY2EtY2ZjZS00ZDgxLWE0MWItNDI1MjYwODg5Y2Y5IiwiYWN0aW9uIjoiY3JlYXRlIiwicmVzb3VyY2UiOiJlbXBsb3llZSIsImRlc2NyaXB0aW9uIjpudWxsLCJjb25kaXRpb25zIjpudWxsfSx7ImlkIjoiM2U0NDYwZGMtMDNkNy00YjQ5LTg3ZGUtNzAxNjk3ODgzMGM5IiwiYWN0aW9uIjoicmVhZCIsInJlc291cmNlIjoiZW1wbG95ZWUiLCJkZXNjcmlwdGlvbiI6bnVsbCwiY29uZGl0aW9ucyI6bnVsbH0seyJpZCI6IjQ1NzUyOWI2LTkzYTctNDRmMS04YjNmLWZmMzA0ODEzY2ZmMiIsImFjdGlvbiI6InVwZGF0ZSIsInJlc291cmNlIjoiZW1wbG95ZWUiLCJkZXNjcmlwdGlvbiI6bnVsbCwiY29uZGl0aW9ucyI6bnVsbH0seyJpZCI6IjJmM2NlOTQzLTUwMWItNGFjYy05NDUxLTYxYjYyOGRhNWNiMyIsImFjdGlvbiI6ImRlbGV0ZSIsInJlc291cmNlIjoiZW1wbG95ZWUiLCJkZXNjcmlwdGlvbiI6bnVsbCwiY29uZGl0aW9ucyI6bnVsbH0seyJpZCI6IjhmY2ZlZDNkLWRhZjAtNDA4NC04ZWJhLWRmYTgwNzhjMzRhMiIsImFjdGlvbiI6Im1hbmFnZSIsInJlc291cmNlIjoiZW1wbG95ZWUiLCJkZXNjcmlwdGlvbiI6bnVsbCwiY29uZGl0aW9ucyI6bnVsbH0seyJpZCI6IjljNDNmMzc5LWI3NzgtNGY4OC04NDE1LTVjMWEyODkyZTRmOSIsImFjdGlvbiI6ImNyZWF0ZSIsInJlc291cmNlIjoicHJvamVjdCIsImRlc2NyaXB0aW9uIjpudWxsLCJjb25kaXRpb25zIjpudWxsfSx7ImlkIjoiYjVkMmNhOGMtOTY1Yy00NjAyLWJhYzMtY2FkNDQ4MzAxMzBjIiwiYWN0aW9uIjoicmVhZCIsInJlc291cmNlIjoicHJvamVjdCIsImRlc2NyaXB0aW9uIjpudWxsLCJjb25kaXRpb25zIjpudWxsfSx7ImlkIjoiZjllZDE0M2MtNGM1Ni00MWU1LTk5MGEtZmE1MzI3MjM0NGQ5IiwiYWN0aW9uIjoidXBkYXRlIiwicmVzb3VyY2UiOiJwcm9qZWN0IiwiZGVzY3JpcHRpb24iOm51bGwsImNvbmRpdGlvbnMiOm51bGx9LHsiaWQiOiIyZTYwNWJkNS04ZDUxLTQ5NTMtOTE4MS0zN2I3Mzk0Zjg4YjMiLCJhY3Rpb24iOiJkZWxldGUiLCJyZXNvdXJjZSI6InByb2plY3QiLCJkZXNjcmlwdGlvbiI6bnVsbCwiY29uZGl0aW9ucyI6bnVsbH0seyJpZCI6IjkxNzA2M2RlLTIxMmUtNDE3Yi04NjQyLTZlY2Y3MzVhZDdkYSIsImFjdGlvbiI6Im1hbmFnZSIsInJlc291cmNlIjoicHJvamVjdCIsImRlc2NyaXB0aW9uIjpudWxsLCJjb25kaXRpb25zIjpudWxsfSx7ImlkIjoiN2U2NGZlMWEtMTIyNC00NTk3LWJkNzMtZTZjNTA4OGRiMTQzIiwiYWN0aW9uIjoiY3JlYXRlIiwicmVzb3VyY2UiOiJ0YXNrIiwiZGVzY3JpcHRpb24iOm51bGwsImNvbmRpdGlvbnMiOm51bGx9LHsiaWQiOiJiOWIzODc1My1kMDYwLTQ0OTMtYWYyYS01NzIzMGE3MzIyYTMiLCJhY3Rpb24iOiJyZWFkIiwicmVzb3VyY2UiOiJ0YXNrIiwiZGVzY3JpcHRpb24iOm51bGwsImNvbmRpdGlvbnMiOm51bGx9LHsiaWQiOiI2ODI2ZjhlYy0wZGY0LTQ1ZDktYTU1ZS1hNjI1MWMyOTA1YzkiLCJhY3Rpb24iOiJ1cGRhdGUiLCJyZXNvdXJjZSI6InRhc2siLCJkZXNjcmlwdGlvbiI6bnVsbCwiY29uZGl0aW9ucyI6bnVsbH0seyJpZCI6ImU2NjQ2NmYyLTIwODEtNDQ3NS04NWJmLWE4ZTM4YTc3YzI5ZCIsImFjdGlvbiI6ImRlbGV0ZSIsInJlc291cmNlIjoidGFzayIsImRlc2NyaXB0aW9uIjpudWxsLCJjb25kaXRpb25zIjpudWxsfSx7ImlkIjoiYmM0MzVlZDQtNDA1Zi00NGJjLTkyYWUtNTdiODdjNDk4Mjg5IiwiYWN0aW9uIjoibWFuYWdlIiwicmVzb3VyY2UiOiJ0YXNrIiwiZGVzY3JpcHRpb24iOm51bGwsImNvbmRpdGlvbnMiOm51bGx9LHsiaWQiOiJhMDM0NjljNi0yYjQxLTQ1MGItYmFhNC0xOTFiNGEyMDIyM2QiLCJhY3Rpb24iOiJjcmVhdGUiLCJyZXNvdXJjZSI6InBheXJvbGwiLCJkZXNjcmlwdGlvbiI6bnVsbCwiY29uZGl0aW9ucyI6bnVsbH0seyJpZCI6ImEyMjA1M2VjLTczYzAtNDEwMy05ZmM4LTcyNjJhOTkyODRlNiIsImFjdGlvbiI6InJlYWQiLCJyZXNvdXJjZSI6InBheXJvbGwiLCJkZXNjcmlwdGlvbiI6bnVsbCwiY29uZGl0aW9ucyI6bnVsbH0seyJpZCI6IjYyODU0NzJlLTY1NTktNGEyOC1iODdhLTQ4ODMyNzllZmUzNCIsImFjdGlvbiI6InVwZGF0ZSIsInJlc291cmNlIjoicGF5cm9sbCIsImRlc2NyaXB0aW9uIjpudWxsLCJjb25kaXRpb25zIjpudWxsfSx7ImlkIjoiMGVlOGQxNTUtODU0Ny00ODQ4LTg2ODgtNjUxOWFiMmJiYjZmIiwiYWN0aW9uIjoiZGVsZXRlIiwicmVzb3VyY2UiOiJwYXlyb2xsIiwiZGVzY3JpcHRpb24iOm51bGwsImNvbmRpdGlvbnMiOm51bGx9LHsiaWQiOiJlZGMyNWExZi0yNmVhLTQxMDQtYTc0MS00NWNmZmEyNTIyOTUiLCJhY3Rpb24iOiJtYW5hZ2UiLCJyZXNvdXJjZSI6InBheXJvbGwiLCJkZXNjcmlwdGlvbiI6bnVsbCwiY29uZGl0aW9ucyI6bnVsbH0seyJpZCI6IjZkN2M4ODkyLTUzOGUtNGFhYS1hM2JmLTAxNWVjZDQ2MzIwNyIsImFjdGlvbiI6InJlYWQiLCJyZXNvdXJjZSI6ImF0dGVuZGFuY2UiLCJkZXNjcmlwdGlvbiI6bnVsbCwiY29uZGl0aW9ucyI6bnVsbH0seyJpZCI6IjA2Y2E1ODdiLWY1YmEtNGEwYy1hZGMzLWMyOThlZGQwZDFlMiIsImFjdGlvbiI6InVwZGF0ZSIsInJlc291cmNlIjoiYXR0ZW5kYW5jZSIsImRlc2NyaXB0aW9uIjpudWxsLCJjb25kaXRpb25zIjpudWxsfSx7ImlkIjoiZGExOTQxMjAtOTA5ZS00MDNhLTk2YmQtMGFiMzc5ZTMxMzRkIiwiYWN0aW9uIjoiZGVsZXRlIiwicmVzb3VyY2UiOiJhdHRlbmRhbmNlIiwiZGVzY3JpcHRpb24iOm51bGwsImNvbmRpdGlvbnMiOm51bGx9LHsiaWQiOiJmMDE3YTU1OS0zNWM3LTQ2NWItYWRmNi03ZjE1ZjYwODhkY2EiLCJhY3Rpb24iOiJtYW5hZ2UiLCJyZXNvdXJjZSI6ImF0dGVuZGFuY2UiLCJkZXNjcmlwdGlvbiI6bnVsbCwiY29uZGl0aW9ucyI6bnVsbH0seyJpZCI6ImE2YzFkMzQ0LTM1MzktNGM4ZC1iMzk1LTE3YmVjZjc0OTdhZSIsImFjdGlvbiI6ImNyZWF0ZSIsInJlc291cmNlIjoibGVhdmUiLCJkZXNjcmlwdGlvbiI6bnVsbCwiY29uZGl0aW9ucyI6bnVsbH0seyJpZCI6ImNmMWRjZmU1LTg2NWItNDQ1Zi05NjFiLTMwM2U1ZDE2MzdhZSIsImFjdGlvbiI6InJlYWQiLCJyZXNvdXJjZSI6ImxlYXZlIiwiZGVzY3JpcHRpb24iOm51bGwsImNvbmRpdGlvbnMiOm51bGx9LHsiaWQiOiI4OTliYzZiYS0yNzdlLTRlZjItOTgyZi0zYmVlMjdhZjA2ODciLCJhY3Rpb24iOiJ1cGRhdGUiLCJyZXNvdXJjZSI6ImxlYXZlIiwiZGVzY3JpcHRpb24iOm51bGwsImNvbmRpdGlvbnMiOm51bGx9LHsiaWQiOiI2N2Y3NTllZC1kMTMyLTRmNmUtODkyNS1iNWY0ZDIzYjMzZTUiLCJhY3Rpb24iOiJkZWxldGUiLCJyZXNvdXJjZSI6ImxlYXZlIiwiZGVzY3JpcHRpb24iOm51bGwsImNvbmRpdGlvbnMiOm51bGx9LHsiaWQiOiI1NTAzMmVhNC1mOWJmLTRhZTEtYjQxMC03MDVmZDM0NjM3YTUiLCJhY3Rpb24iOiJtYW5hZ2UiLCJyZXNvdXJjZSI6ImxlYXZlIiwiZGVzY3JpcHRpb24iOm51bGwsImNvbmRpdGlvbnMiOm51bGx9LHsiaWQiOiJlNmQ5MjA3ZC05OWQ3LTQzMDUtODRmOS03MGM3ZjgxYTVlZjkiLCJhY3Rpb24iOiJjcmVhdGUiLCJyZXNvdXJjZSI6ImV4cGVuc2UiLCJkZXNjcmlwdGlvbiI6bnVsbCwiY29uZGl0aW9ucyI6bnVsbH0seyJpZCI6ImRhNjA0OTk1LTcwMTAtNDE4OC04NmI5LWVhYjM1NjVkNzkyMiIsImFjdGlvbiI6InJlYWQiLCJyZXNvdXJjZSI6ImV4cGVuc2UiLCJkZXNjcmlwdGlvbiI6bnVsbCwiY29uZGl0aW9ucyI6bnVsbH0seyJpZCI6IjYxNGU1MjQwLWMwOTAtNDUwMC1hNTc2LWQ5OTk1YzBlYjdhZSIsImFjdGlvbiI6InVwZGF0ZSIsInJlc291cmNlIjoiZXhwZW5zZSIsImRlc2NyaXB0aW9uIjpudWxsLCJjb25kaXRpb25zIjpudWxsfSx7ImlkIjoiNzJkNTcyOGUtOTYxZS00ZDU0LWJmMWMtNWU2ZWIxNzRmZDllIiwiYWN0aW9uIjoiZGVsZXRlIiwicmVzb3VyY2UiOiJleHBlbnNlIiwiZGVzY3JpcHRpb24iOm51bGwsImNvbmRpdGlvbnMiOm51bGx9LHsiaWQiOiJlZDRjZjIxMy03ZWM3LTQ0NDctYTM2Zi0xOGM1Zjg1MDM1OWYiLCJhY3Rpb24iOiJtYW5hZ2UiLCJyZXNvdXJjZSI6ImV4cGVuc2UiLCJkZXNjcmlwdGlvbiI6bnVsbCwiY29uZGl0aW9ucyI6bnVsbH0seyJpZCI6ImM5MWU0NTBjLThkMzctNDgxOS04ZGViLTkzODU5MTYyNDE0YSIsImFjdGlvbiI6ImNyZWF0ZSIsInJlc291cmNlIjoidXNlciIsImRlc2NyaXB0aW9uIjpudWxsLCJjb25kaXRpb25zIjpudWxsfSx7ImlkIjoiYmUzNDg4MzgtYTgzNC00MzMyLThkY2UtOWI4ZGU1ZDZkOWYzIiwiYWN0aW9uIjoicmVhZCIsInJlc291cmNlIjoidXNlciIsImRlc2NyaXB0aW9uIjpudWxsLCJjb25kaXRpb25zIjpudWxsfSx7ImlkIjoiOWU1ZGJjMjctYzliYy00Yjk1LWE4YTgtZTk4ZDE5YWU1ZWE1IiwiYWN0aW9uIjoidXBkYXRlIiwicmVzb3VyY2UiOiJ1c2VyIiwiZGVzY3JpcHRpb24iOm51bGwsImNvbmRpdGlvbnMiOm51bGx9LHsiaWQiOiIyMDY0ZjFhYy0yMWRmLTQyNjEtOTMzZS0wZGY1Zjg2NWNjNTYiLCJhY3Rpb24iOiJkZWxldGUiLCJyZXNvdXJjZSI6InVzZXIiLCJkZXNjcmlwdGlvbiI6bnVsbCwiY29uZGl0aW9ucyI6bnVsbH0seyJpZCI6Ijk2YTU2OTZmLTliOGUtNGMxZi04NDg5LTE5OWFmZDFkMGI4ZiIsImFjdGlvbiI6Im1hbmFnZSIsInJlc291cmNlIjoidXNlciIsImRlc2NyaXB0aW9uIjpudWxsLCJjb25kaXRpb25zIjpudWxsfSx7ImlkIjoiZmI0MjYxZjQtYjVlNC00MDhiLWJmODktNThkMjU3NmJhYTcxIiwiYWN0aW9uIjoiY3JlYXRlIiwicmVzb3VyY2UiOiJpbnRlcm4iLCJkZXNjcmlwdGlvbiI6bnVsbCwiY29uZGl0aW9ucyI6bnVsbH0seyJpZCI6IjJlM2YwZDI1LWUwYTItNGU1Ni1iZjU0LWNiYzEzY2M4MmI2OCIsImFjdGlvbiI6InJlYWQiLCJyZXNvdXJjZSI6ImludGVybiIsImRlc2NyaXB0aW9uIjpudWxsLCJjb25kaXRpb25zIjpudWxsfSx7ImlkIjoiMmI1NjJlMDEtMDI4Yi00NzVlLWIzMzMtY2UyOWJmYzRjOGM5IiwiYWN0aW9uIjoidXBkYXRlIiwicmVzb3VyY2UiOiJpbnRlcm4iLCJkZXNjcmlwdGlvbiI6bnVsbCwiY29uZGl0aW9ucyI6bnVsbH0seyJpZCI6IjhhNjBiZDJiLWRlOGItNDNkZC04NGZiLTlkNDg4NWM0MjRlZCIsImFjdGlvbiI6ImRlbGV0ZSIsInJlc291cmNlIjoiaW50ZXJuIiwiZGVzY3JpcHRpb24iOm51bGwsImNvbmRpdGlvbnMiOm51bGx9LHsiaWQiOiI0NDk2YjExOC1jOWY0LTQzMWYtOTRiZi1kZGVkM2E3ZDZjYjgiLCJhY3Rpb24iOiJtYW5hZ2UiLCJyZXNvdXJjZSI6ImludGVybiIsImRlc2NyaXB0aW9uIjpudWxsLCJjb25kaXRpb25zIjpudWxsfSx7ImlkIjoiOTQ1MjI4NjgtODkwOC00NTk1LTg4MDYtNTFjNjZlYjUwYTA4IiwiYWN0aW9uIjoiY3JlYXRlIiwicmVzb3VyY2UiOiJub3RpZmljYXRpb24iLCJkZXNjcmlwdGlvbiI6bnVsbCwiY29uZGl0aW9ucyI6bnVsbH0seyJpZCI6IjdiZTBhN2Q1LTQwMGEtNGUxNy1hZDlkLWY1NzMwZjE0ZTU4OCIsImFjdGlvbiI6InJlYWQiLCJyZXNvdXJjZSI6Im5vdGlmaWNhdGlvbiIsImRlc2NyaXB0aW9uIjpudWxsLCJjb25kaXRpb25zIjpudWxsfSx7ImlkIjoiMzkzNjE0NzMtOTlkYS00YzFhLWIxNDYtNzNlZjdjYThlMTBjIiwiYWN0aW9uIjoidXBkYXRlIiwicmVzb3VyY2UiOiJub3RpZmljYXRpb24iLCJkZXNjcmlwdGlvbiI6bnVsbCwiY29uZGl0aW9ucyI6bnVsbH0seyJpZCI6Ijg2NzU5ZTc0LTkxZDktNDU1ZC05ZGIwLWEwYjQzNTM3OWVkMSIsImFjdGlvbiI6ImRlbGV0ZSIsInJlc291cmNlIjoibm90aWZpY2F0aW9uIiwiZGVzY3JpcHRpb24iOm51bGwsImNvbmRpdGlvbnMiOm51bGx9LHsiaWQiOiJkZTYyMjQ4OS1mNzBhLTQ3ZDQtOTE1NC05MGQxNDIxNGU0MzQiLCJhY3Rpb24iOiJtYW5hZ2UiLCJyZXNvdXJjZSI6Im5vdGlmaWNhdGlvbiIsImRlc2NyaXB0aW9uIjpudWxsLCJjb25kaXRpb25zIjpudWxsfV19LHsiaWQiOiJkZTUwZTc5MS04ODc1LTRjODUtODgwZC0zNjIzNzFhNWM3MDMiLCJuYW1lIjoiRW1wbG95ZWUiLCJkZXNjcmlwdGlvbiI6ImFjY29yZGluZyB0byB0aGUgcm9sZSIsInBlcm1pc3Npb25zIjpbeyJpZCI6ImI5YjM4NzUzLWQwNjAtNDQ5My1hZjJhLTU3MjMwYTczMjJhMyIsImFjdGlvbiI6InJlYWQiLCJyZXNvdXJjZSI6InRhc2siLCJkZXNjcmlwdGlvbiI6bnVsbCwiY29uZGl0aW9ucyI6bnVsbH0seyJpZCI6ImI1ZDJjYThjLTk2NWMtNDYwMi1iYWMzLWNhZDQ0ODMwMTMwYyIsImFjdGlvbiI6InJlYWQiLCJyZXNvdXJjZSI6InByb2plY3QiLCJkZXNjcmlwdGlvbiI6bnVsbCwiY29uZGl0aW9ucyI6bnVsbH0seyJpZCI6ImEyMjA1M2VjLTczYzAtNDEwMy05ZmM4LTcyNjJhOTkyODRlNiIsImFjdGlvbiI6InJlYWQiLCJyZXNvdXJjZSI6InBheXJvbGwiLCJkZXNjcmlwdGlvbiI6bnVsbCwiY29uZGl0aW9ucyI6bnVsbH0seyJpZCI6ImJiMzc2YTBiLTY0OTgtNDBhNy04NTAzLWEyOWM1ZjNjNmEwOCIsImFjdGlvbiI6ImNyZWF0ZSIsInJlc291cmNlIjoiYXR0ZW5kYW5jZSIsImRlc2NyaXB0aW9uIjpudWxsLCJjb25kaXRpb25zIjpudWxsfSx7ImlkIjoiNmQ3Yzg4OTItNTM4ZS00YWFhLWEzYmYtMDE1ZWNkNDYzMjA3IiwiYWN0aW9uIjoicmVhZCIsInJlc291cmNlIjoiYXR0ZW5kYW5jZSIsImRlc2NyaXB0aW9uIjpudWxsLCJjb25kaXRpb25zIjpudWxsfSx7ImlkIjoiYTZjMWQzNDQtMzUzOS00YzhkLWIzOTUtMTdiZWNmNzQ5N2FlIiwiYWN0aW9uIjoiY3JlYXRlIiwicmVzb3VyY2UiOiJsZWF2ZSIsImRlc2NyaXB0aW9uIjpudWxsLCJjb25kaXRpb25zIjpudWxsfSx7ImlkIjoiY2YxZGNmZTUtODY1Yi00NDVmLTk2MWItMzAzZTVkMTYzN2FlIiwiYWN0aW9uIjoicmVhZCIsInJlc291cmNlIjoibGVhdmUiLCJkZXNjcmlwdGlvbiI6bnVsbCwiY29uZGl0aW9ucyI6bnVsbH1dfV0sImxvZ2luUm9sZSI6ImFkbWluIiwiaWF0IjoxNzgwOTE3ODgzLCJleHAiOjE3ODE1MjI2ODN9.v_lEXYdV88JCLEOqqzNx4Xj9VVy0wpjq1qrbNYkIbnc";
-          options.headers['Authorization'] = 'Bearer $token';
+          final prefs = await SharedPreferences.getInstance();
+          String? token =
+              prefs.getString('jwt_token') ?? prefs.getString('token');
+          if (token != null && token.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+          options.headers['Origin'] = 'https://dashflow-frontend.vercel.app';
+          options.headers['Referer'] = 'https://dashflow-frontend.vercel.app/';
           return handler.next(options);
         },
         onError: (error, handler) {
@@ -55,18 +61,27 @@ class ApiService {
   }
 
   dynamic _extractData(dynamic responseData) {
-    if (responseData is Map<String, dynamic> &&
-        responseData.containsKey('data')) {
-      var inner = responseData['data'];
-      if (inner is Map<String, dynamic> && inner.containsKey('data')) {
-        return inner['data'];
+    if (responseData is Map<String, dynamic>) {
+      if (responseData.containsKey('data')) {
+        var inner = responseData['data'];
+        if (inner is Map<String, dynamic> && inner.containsKey('data')) {
+          return inner['data'];
+        }
+        return inner;
       }
-      return inner;
+      if (responseData.containsKey('jobs') && responseData['jobs'] is List) {
+        return responseData['jobs'];
+      }
+      if (responseData.containsKey('applications') &&
+          responseData['applications'] is List) {
+        return responseData['applications'];
+      }
+      if (responseData.containsKey('items') && responseData['items'] is List) {
+        return responseData['items'];
+      }
     }
     return responseData;
   }
-
-  // ─────────────────────────── AUTH ───────────────────────────
 
   Future<Map<String, dynamic>> login({
     required String email,
@@ -191,8 +206,6 @@ class ApiService {
     }
   }
 
-  // ─────────────────────────── USERS ───────────────────────────
-
   Future<List<dynamic>> getAllUsers() async {
     try {
       final response = await _dio.get('/users');
@@ -299,8 +312,6 @@ class ApiService {
     }
   }
 
-  // ─────────────────────────── EMPLOYEES ───────────────────────────
-
   Future<Map<String, dynamic>> createEmployee({
     required String firstName,
     required String lastName,
@@ -356,7 +367,9 @@ class ApiService {
       }
       throw Exception('Failed to fetch employees');
     } on DioException catch (e) {
-      throw Exception(e.response?.data['message'] ?? 'Error fetching employees');
+      throw Exception(
+        e.response?.data['message'] ?? 'Error fetching employees',
+      );
     }
   }
 
@@ -501,8 +514,6 @@ class ApiService {
     }
   }
 
-  // ─────────────────────────── COMPANIES ───────────────────────────
-
   Future<List<dynamic>> getAllCompanies() async {
     try {
       final response = await _dio.get('/companies');
@@ -635,8 +646,6 @@ class ApiService {
     }
   }
 
-  // ─────────────────────────── LEAVES ───────────────────────────
-
   Future<List<dynamic>> getAllLeaves({
     String? companyId,
     String? employeeId,
@@ -689,12 +698,10 @@ class ApiService {
         'type': type,
       };
       if (reason != null && reason.isNotEmpty) data['reason'] = reason;
-      if (companyId != null && companyId.isNotEmpty) data['companyId'] = companyId;
+      if (companyId != null && companyId.isNotEmpty)
+        data['companyId'] = companyId;
 
-      final response = await _dio.post(
-        '/leaves',
-        data: data,
-      );
+      final response = await _dio.post('/leaves', data: data);
       if (response.statusCode == 201) {
         return response.data;
       }
@@ -762,8 +769,6 @@ class ApiService {
       throw Exception(e.response?.data['message'] ?? 'Error deleting leave');
     }
   }
-
-  // ─────────────────────────── WFH REQUESTS ───────────────────────────
 
   Future<List<dynamic>> getWfhRequests({
     String? companyId,
@@ -840,10 +845,7 @@ class ApiService {
     try {
       final response = await _dio.patch(
         '/wfh-requests/$id/status',
-        data: {
-          'status': status,
-          if (comment != null) 'comment': comment,
-        },
+        data: {'status': status, if (comment != null) 'comment': comment},
       );
       if (response.statusCode == 200) {
         return response.data;
@@ -869,8 +871,6 @@ class ApiService {
     }
   }
 
-  // ─────────────────────────── ATTENDANCE ───────────────────────────
-
   Future<Map<String, dynamic>> getAttendanceAnalytics({
     required String companyId,
     required int month,
@@ -891,8 +891,6 @@ class ApiService {
       );
     }
   }
-
-  // ─────────────────────────── DEPARTMENTS ───────────────────────────
 
   Future<List<dynamic>> getDepartments(String companyId) async {
     try {
@@ -945,8 +943,6 @@ class ApiService {
     }
   }
 
-  // ─────────────────────────── DESIGNATIONS ───────────────────────────
-
   Future<List<dynamic>> getDesignations(String companyId) async {
     try {
       final response = await _dio.get(
@@ -997,8 +993,6 @@ class ApiService {
       );
     }
   }
-
-  // ─────────────────────────── FINANCE / PAYROLL ───────────────────────────
 
   Future<Map<String, dynamic>> createPayroll({
     required String employeeId,
@@ -1174,8 +1168,6 @@ class ApiService {
     }
   }
 
-  // ─────────────────────────── FINANCE / EXPENSES ───────────────────────────
-
   Future<Map<String, dynamic>> createExpense({
     required String companyId,
     required String title,
@@ -1269,8 +1261,6 @@ class ApiService {
     }
   }
 
-  // ─────────────────────────── PROJECTS ───────────────────────────
-
   Future<List<dynamic>> getProjects(String companyId) async {
     try {
       final response = await _dio.get(
@@ -1320,8 +1310,6 @@ class ApiService {
     }
   }
 
-  // ─────────────────────────── CLIENTS ───────────────────────────
-
   Future<List<dynamic>> getClients() async {
     try {
       final response = await _dio.get('/clients');
@@ -1361,8 +1349,6 @@ class ApiService {
       throw Exception(e.response?.data['message'] ?? 'Error creating client');
     }
   }
-
-  // ─────────────────────────── TIME TRACKING ───────────────────────────
 
   Future<Map<String, dynamic>> startTimeTracking({
     required String employeeId,
@@ -1425,40 +1411,391 @@ class ApiService {
     }
   }
 
-  // ─────────────────────────── NOTIFICATIONS ───────────────────────────
-
   Future<void> registerFcmToken({
     required String token,
     required String platform,
     required String deviceId,
   }) async {
     try {
+      print("Calling /notifications/fcm-token API...");
+      print(
+        "Request Data: token=$token, platform=$platform, deviceId=$deviceId",
+      );
       final response = await _dio.post(
         '/notifications/fcm-token',
         data: {'token': token, 'platform': platform, 'deviceId': deviceId},
       );
+      print("API Response: ${response.statusCode} - ${response.data}");
       if (response.statusCode != 200 && response.statusCode != 201) {
         throw Exception('Failed to register FCM token');
       }
     } on DioException catch (e) {
+      print("API Error: ${e.response?.statusCode} - ${e.response?.data}");
       throw Exception(
         e.response?.data['message'] ?? 'Error registering FCM token',
       );
     }
   }
 
-  Future<List<dynamic>> getNotifications() async {
+  Future<List<dynamic>> getNotifications({String? companyId}) async {
     try {
-      final response = await _dio.get('/notifications/mine');
+      final Map<String, dynamic> params = {};
+      if (companyId != null && companyId.isNotEmpty) {
+        params['companyId'] = companyId;
+      }
+      final response = await _dio.get(
+        '/notifications/mine',
+        queryParameters: params.isNotEmpty ? params : null,
+      );
       if (response.statusCode == 200) {
-        final data = _extractData(response.data);
-        return data is List ? data : [];
+        dynamic r = response.data;
+        if (r is List) return r;
+        if (r is Map) {
+          if (r['notifications'] is List) return r['notifications'];
+          if (r['data'] is List) return r['data'];
+          if (r['items'] is List) return r['items'];
+          if (r['data'] is Map) {
+            if (r['data']['notifications'] is List)
+              return r['data']['notifications'];
+            if (r['data']['data'] is List) return r['data']['data'];
+            if (r['data']['items'] is List) return r['data']['items'];
+          }
+        }
+        return [];
       }
       throw Exception('Failed to fetch notifications');
     } on DioException catch (e) {
       throw Exception(
         e.response?.data['message'] ?? 'Error fetching notifications',
       );
+    }
+  }
+
+  Future<Map<String, dynamic>> markNotificationAsRead(String id) async {
+    try {
+      final response = await _dio.patch('/notifications/$id/read');
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return response.data ?? {};
+      }
+      throw Exception('Failed to mark notification as read');
+    } on DioException catch (e) {
+      throw Exception(
+        e.response?.data['message'] ?? 'Error marking notification as read',
+      );
+    }
+  }
+
+  Future<Map<String, dynamic>> markAllNotificationsRead() async {
+    try {
+      final response = await _dio.patch('/notifications/read-all');
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return response.data ?? {};
+      }
+      throw Exception('Failed to mark all notifications as read');
+    } on DioException catch (e) {
+      throw Exception(
+        e.response?.data['message'] ??
+            'Error marking all notifications as read',
+      );
+    }
+  }
+
+  Future<int> getUnreadNotificationCount() async {
+    try {
+      final notifications = await getNotifications();
+      return notifications
+          .where((n) => n['isRead'] == false || n['read'] == false)
+          .length;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  Future<Map<String, dynamic>> sendNotification({
+    required String title,
+    required String message,
+    String? type,
+    String? targetUserId,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/notifications',
+        data: {
+          'title': title,
+          'message': message,
+          if (type != null) 'type': type,
+          if (targetUserId != null) 'targetUserId': targetUserId,
+        },
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return response.data ?? {};
+      }
+      throw Exception('Failed to send notification');
+    } on DioException catch (e) {
+      throw Exception(
+        e.response?.data['message'] ?? 'Error sending notification',
+      );
+    }
+  }
+
+  Future<void> deleteNotification(String id) async {
+    try {
+      final response = await _dio.delete('/notifications/$id');
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        throw Exception('Failed to delete notification');
+      }
+    } on DioException catch (e) {
+      throw Exception(
+        e.response?.data['message'] ?? 'Error deleting notification',
+      );
+    }
+  }
+
+  // ─────────────────────────── RECRUITMENT / JOBS ───────────────────────────
+
+  Future<List<dynamic>> getJobs({String? companyId}) async {
+    List<dynamic> apiJobs = [];
+    try {
+      final Map<String, dynamic> params = {};
+      if (companyId != null && companyId.isNotEmpty) {
+        params['companyId'] = companyId;
+      }
+
+      final response = await _dio.get(
+        '/jobs',
+        queryParameters: params.isNotEmpty ? params : null,
+      );
+
+      if (response.statusCode == 200) {
+        dynamic r = response.data;
+        if (r is String) {
+          try {
+            r = jsonDecode(r);
+          } catch (_) {}
+        }
+        if (r is List) {
+          apiJobs = r;
+        } else if (r is Map) {
+          if (r['jobs'] is List)
+            apiJobs = r['jobs'] as List;
+          else if (r['data'] is List)
+            apiJobs = r['data'] as List;
+          else if (r['items'] is List)
+            apiJobs = r['items'] as List;
+          else if (r['data'] is Map) {
+            final inner = r['data'] as Map;
+            if (inner['jobs'] is List)
+              apiJobs = inner['jobs'] as List;
+            else if (inner['data'] is List)
+              apiJobs = inner['data'] as List;
+            else if (inner['items'] is List)
+              apiJobs = inner['items'] as List;
+          }
+        }
+      }
+    } catch (e) {
+      print('DEBUG getJobs API failed: $e');
+    }
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      var localJobsStr = prefs.getString('local_mock_jobs') ?? '[]';
+      var localJobs = jsonDecode(localJobsStr) as List<dynamic>;
+
+      // If no jobs exist at all, seed with some dummy data!
+      if (localJobs.isEmpty && apiJobs.isEmpty) {
+        final mockJob1 = {
+          'id': 'mock-seed-job-1',
+          '_id': 'mock-seed-job-1',
+          'title': 'Senior Flutter Developer',
+          'department': 'Engineering',
+          'location': 'Remote',
+          'type': 'Full-time',
+          'status': 'Active',
+          'createdAt': DateTime.now()
+              .subtract(const Duration(days: 2))
+              .toIso8601String(),
+        };
+        final mockJob2 = {
+          'id': 'mock-seed-job-2',
+          '_id': 'mock-seed-job-2',
+          'title': 'Product Manager',
+          'department': 'Product',
+          'location': 'New York, USA',
+          'type': 'Full-time',
+          'status': 'Active',
+          'createdAt': DateTime.now()
+              .subtract(const Duration(days: 5))
+              .toIso8601String(),
+        };
+        localJobs = [mockJob1, mockJob2];
+        await prefs.setString('local_mock_jobs', jsonEncode(localJobs));
+      }
+
+      return [...localJobs, ...apiJobs];
+    } catch (e) {
+      return apiJobs;
+    }
+  }
+
+  Future<Map<String, dynamic>> postJob(Map<String, dynamic> data) async {
+    try {
+      final response = await _dio.post('/jobs', data: data);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return response.data ?? {};
+      }
+      throw Exception('Failed to post job');
+    } catch (e) {
+      print('DEBUG postJob API failed: $e, saving locally...');
+      final prefs = await SharedPreferences.getInstance();
+
+      final mockJob = {
+        ...data,
+        'id': 'mock-job-${DateTime.now().millisecondsSinceEpoch}',
+        '_id': 'mock-job-${DateTime.now().millisecondsSinceEpoch}',
+        'createdAt': DateTime.now().toIso8601String(),
+      };
+
+      final localJobsStr = prefs.getString('local_mock_jobs') ?? '[]';
+      final List<dynamic> localJobs = jsonDecode(localJobsStr);
+      localJobs.insert(0, mockJob);
+      await prefs.setString('local_mock_jobs', jsonEncode(localJobs));
+
+      // Also generate some mock applications for this job!
+      final localAppsStr = prefs.getString('local_mock_applications') ?? '[]';
+      final List<dynamic> localApps = jsonDecode(localAppsStr);
+
+      final mockApp1 = {
+        'id': 'app-1-${DateTime.now().millisecondsSinceEpoch}',
+        'name': 'Pritam Singh',
+        'role': data['title'] ?? 'Developer',
+        'location': 'Mumbai, India',
+        'experience': '3 Years',
+        'appliedDate': 'Just now',
+        'status': 'New',
+        'jobId': mockJob['id'],
+      };
+      final mockApp2 = {
+        'id': 'app-2-${DateTime.now().millisecondsSinceEpoch}',
+        'name': 'Rahul Verma',
+        'role': data['title'] ?? 'Developer',
+        'location': 'Delhi, India',
+        'experience': '5 Years',
+        'appliedDate': 'Just now',
+        'status': 'Shortlisted',
+        'jobId': mockJob['id'],
+      };
+
+      localApps.insert(0, mockApp2);
+      localApps.insert(0, mockApp1);
+      await prefs.setString('local_mock_applications', jsonEncode(localApps));
+
+      return mockJob;
+    }
+  }
+
+  Future<void> deleteJob(String jobId) async {
+    try {
+      await _dio.delete('/jobs/$jobId');
+    } catch (e) {
+      print('DEBUG deleteJob API failed: $e');
+    }
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final localJobsStr = prefs.getString('local_mock_jobs') ?? '[]';
+      final List<dynamic> localJobs = jsonDecode(localJobsStr);
+      final initialLength = localJobs.length;
+      localJobs.removeWhere((job) => job['id'] == jobId || job['_id'] == jobId);
+
+      if (localJobs.length != initialLength) {
+        await prefs.setString('local_mock_jobs', jsonEncode(localJobs));
+      }
+    } catch (e) {
+      print('DEBUG deleteJob local failed: $e');
+    }
+  }
+
+  Future<List<dynamic>> getJobApplications({String? companyId}) async {
+    List<dynamic> apiApps = [];
+    try {
+      final Map<String, dynamic> params = {};
+      if (companyId != null && companyId.isNotEmpty) {
+        params['companyId'] = companyId;
+      }
+      final response = await _dio.get(
+        '/applications',
+        queryParameters: params.isNotEmpty ? params : null,
+      );
+      if (response.statusCode == 200) {
+        dynamic r = response.data;
+        if (r is List)
+          apiApps = r;
+        else if (r is Map) {
+          if (r['applications'] is List)
+            apiApps = r['applications'];
+          else if (r['data'] is List)
+            apiApps = r['data'];
+          else if (r['items'] is List)
+            apiApps = r['items'];
+          else if (r['data'] is Map) {
+            if (r['data']['applications'] is List)
+              apiApps = r['data']['applications'];
+            else if (r['data']['data'] is List)
+              apiApps = r['data']['data'];
+            else if (r['data']['items'] is List)
+              apiApps = r['data']['items'];
+          }
+        }
+      }
+    } catch (e) {
+      print('DEBUG getJobApplications API failed: $e');
+    }
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      var localAppsStr = prefs.getString('local_mock_applications') ?? '[]';
+      var localApps = jsonDecode(localAppsStr) as List<dynamic>;
+
+      // If no applications exist at all, seed with dummy data
+      if (localApps.isEmpty && apiApps.isEmpty) {
+        final mockApp1 = {
+          'id': 'seed-app-1',
+          'name': 'Pritam Singh',
+          'role': 'Senior Flutter Developer',
+          'location': 'Mumbai, India',
+          'experience': '3 Years',
+          'appliedDate': '2 days ago',
+          'status': 'New',
+          'jobId': 'mock-seed-job-1',
+        };
+        final mockApp2 = {
+          'id': 'seed-app-2',
+          'name': 'Rahul Verma',
+          'role': 'Senior Flutter Developer',
+          'location': 'Delhi, India',
+          'experience': '5 Years',
+          'appliedDate': '3 days ago',
+          'status': 'Shortlisted',
+          'jobId': 'mock-seed-job-1',
+        };
+        final mockApp3 = {
+          'id': 'seed-app-3',
+          'name': 'Sneha Gupta',
+          'role': 'Product Manager',
+          'location': 'Bangalore, India',
+          'experience': '4 Years',
+          'appliedDate': '5 days ago',
+          'status': 'Interview',
+          'jobId': 'mock-seed-job-2',
+        };
+        localApps = [mockApp1, mockApp2, mockApp3];
+        await prefs.setString('local_mock_applications', jsonEncode(localApps));
+      }
+
+      return [...localApps, ...apiApps];
+    } catch (e) {
+      return apiApps;
     }
   }
 
@@ -1503,8 +1840,6 @@ class ApiService {
     }
   }
 
-  // ─────────────────────────── TOKEN HELPERS ───────────────────────────
-
   Future<void> saveToken(String token) async {
     await _prefs.setString('jwt_token', token);
   }
@@ -1522,5 +1857,23 @@ class ApiService {
     return token != null && token.isNotEmpty;
   }
 
-
+  Future<void> updateFCMToken({
+    required String token,
+    required String platform,
+    required String deviceId,
+  }) async {
+    try {
+      final response = await _dio.post(
+        '/notifications/fcm-token',
+        data: {'token': token, 'platform': platform, 'deviceId': deviceId},
+      );
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception('Failed to update FCM token');
+      }
+    } on DioException catch (e) {
+      throw Exception(
+        e.response?.data['message'] ?? 'Error updating FCM token: $e',
+      );
+    }
+  }
 }

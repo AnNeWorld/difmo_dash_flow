@@ -353,16 +353,7 @@ class _EmployeesListScreenState extends State<EmployeesListScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showAddEmployeeBottomSheet,
-        backgroundColor: const Color(0xFF2C5282),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: const Icon(
-          Icons.person_add_alt_1_rounded,
-          color: Colors.white,
-          size: 24,
-        ),
-      ),
+
       body: Column(
         children: [
           Padding(
@@ -501,26 +492,35 @@ class _EmployeeCard extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE8F0FE),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          employee.id.isNotEmpty ? employee.id : 'N/A',
-                          style: const TextStyle(
-                            color: Color(0xFF1A73E8),
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
+                      Flexible(
+                        flex: 1,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE8F0FE),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            employee.id.isNotEmpty
+                                ? (employee.id.length > 8
+                                    ? '#${employee.id.substring(0, 8).toUpperCase()}'
+                                    : '#${employee.id.toUpperCase()}')
+                                : 'N/A',
+                            style: const TextStyle(
+                              color: Color(0xFF1A73E8),
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
+                        flex: 2,
                         child: Text(
                           employee.fullName,
                           style: const TextStyle(

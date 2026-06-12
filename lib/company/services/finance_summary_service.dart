@@ -27,9 +27,7 @@ Future<String> _getCompanyId() async {
     final userStr = prefs.getString('user') ?? prefs.getString('user_profile');
     if (userStr != null && userStr.isNotEmpty) {
       final user = jsonDecode(userStr);
-      final id = user['companyId']?.toString() ??
-          user['company']?['id']?.toString() ??
-          user['company']?['_id']?.toString() ?? '';
+      final id = user['companyId']?.toString() ?? (user['company'] is Map ? (user['company']['id']?.toString() ?? user['company']['_id']?.toString()) : user['company']?.toString()) ?? '';
       if (id.isNotEmpty) return id;
     }
 

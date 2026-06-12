@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import '../services/api_service.dart';
 
 class PostJobPage extends StatefulWidget {
   const PostJobPage({super.key});
@@ -20,6 +23,8 @@ class _PostJobPageState extends State<PostJobPage> {
   String _selectedJobType = 'Full-Time';
   String _selectedExperience = 'Mid Level';
   String _selectedWorkMode = 'On-site';
+
+  bool _isPosting = false;
 
   final List<String> _jobTypes = [
     'Full-Time',
@@ -357,27 +362,98 @@ class _PostJobPageState extends State<PostJobPage> {
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Row(
-                            children: [
-                              Icon(Icons.check_circle, color: Colors.white),
-                              SizedBox(width: 8),
-                              Text('Job Posted Successfully!'),
-                            ],
-                          ),
-                          backgroundColor: Colors.green.shade700,
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      );
-                      Navigator.pop(context);
-                    }
-                  },
+                  onPressed: _isPosting
+                      ? null
+                      : () async {
+                          if (_formKey.currentState!.validate()) {
+                            setState(() {
+                              _isPosting = true;
+                            });
+                            try {
+                              final prefs = await SharedPreferences.getInstance();
+                              String companyId = '';
+                              final token = prefs.getString('token') ?? prefs.getString('jwt_token');
+                              if (token != null && token.isNotEmpty) {
+                                final parts = token.split('.');
+                                if (parts.length == 3) {
+                                  final payload = jsonDecode(
+                                      utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))));
+                                  companyId = payload['companyId']?.toString() ?? '';
+                                }
+                              }
+                              if (companyId.isEmpty) {
+                                final userStr = prefs.getString('user') ?? prefs.getString('user_profile');
+                                if (userStr != null) {
+                                  final user = jsonDecode(userStr);
+                                  companyId = user['companyId']?.toString() ??
+                                      user['company']?['id']?.toString() ??
+                                      user['company']?['_id']?.toString() ??
+                                      '';
+                                }
+                              }
+
+                              final reqList = _requirementsController.text
+                                  .split(RegExp(r'\n|,'))
+                                  .map((e) => e.trim())
+                                  .where((e) => e.isNotEmpty)
+                                  .toList();
+
+                              final data = {
+                                'companyId': companyId,
+                                'title': _jobTitleController.text,
+                                'department': _departmentController.text,
+                                'location': _locationController.text,
+                                'type': _selectedJobType,
+                                'experience': _selectedExperience,
+                                'description': _descriptionController.text,
+                                'requirements': reqList,
+                                'responsibilities': [],
+                                'applicationStartDate': DateTime.now().toIso8601String(),
+                                'applicationEndDate': DateTime.now().add(const Duration(days: 30)).toIso8601String(),
+                                'isActive': true,
+                                'vacancies': int.tryParse(_vacanciesController.text) ?? 1,
+                                'workMode': _selectedWorkMode,
+                                'minSalary': int.tryParse(_salaryMinController.text) ?? 0,
+                                'maxSalary': int.tryParse(_salaryMaxController.text) ?? 0,
+                              };
+
+                              await ApiService().postJob(data);
+
+                              if (!mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Row(
+                                    children: [
+                                      Icon(Icons.check_circle, color: Colors.white),
+                                      SizedBox(width: 8),
+                                      Text('Job Posted Successfully!'),
+                                    ],
+                                  ),
+                                  backgroundColor: Colors.green.shade700,
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              );
+                              Navigator.pop(context, true); // true to indicate success
+                            } catch (e) {
+                              if (!mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Error posting job: $e'),
+                                  backgroundColor: Colors.red.shade700,
+                                ),
+                              );
+                            } finally {
+                              if (mounted) {
+                                setState(() {
+                                  _isPosting = false;
+                                });
+                              }
+                            }
+                          }
+                        },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1E40AF),
                     foregroundColor: Colors.white,
@@ -386,21 +462,30 @@ class _PostJobPageState extends State<PostJobPage> {
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.send_rounded, size: 18),
-                      SizedBox(width: 8),
-                      Text(
-                        'Post Job',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5,
+                  child: _isPosting
+                      ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.send_rounded, size: 18),
+                            SizedBox(width: 8),
+                            Text(
+                              'Post Job',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
-                  ),
                 ),
               ),
               const SizedBox(height: 32),

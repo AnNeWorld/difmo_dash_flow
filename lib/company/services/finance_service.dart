@@ -60,14 +60,14 @@ class FinanceService extends StateNotifier<AsyncValue<FinanceData>> {
       await Future.delayed(const Duration(milliseconds: 700));
 
       final data = FinanceData(
-        turnoverAmount: "\$1,248,390",
+        turnoverAmount: "₹1,248,390",
         turnoverPercent: "+12.4%",
         turnoverGraph: [50, 70, 65, 90, 75, 120],
-        netProfitAmount: "\$12.8k",
+        netProfitAmount: "₹12.8k",
         netProfitPercent: "8%",
-        expensesAmount: "\$835.5k",
+        expensesAmount: "₹835.5k",
         expensesPercent: "2%",
-        totalBudget: "\$1.2M",
+        totalBudget: "₹1.2M",
         payrollPercent: 0.60,
         marketingPercent: 0.25,
         operationsPercent: 0.15,
@@ -75,19 +75,19 @@ class FinanceService extends StateNotifier<AsyncValue<FinanceData>> {
           const TransactionItem(
             title: "Q3 Tax Payment",
             time: "Today • 14:32",
-            amount: "-\$24,100",
+            amount: "-₹24,100",
             isExpense: true,
           ),
           const TransactionItem(
             title: "Client Wire: NovaCorp",
             time: "Yesterday • 09:15",
-            amount: "+\$156,000",
+            amount: "+₹156,000",
             isExpense: false,
           ),
           const TransactionItem(
             title: "SaaS Subscription",
             time: "22 Oct • 11:00",
-            amount: "-\$1,250",
+            amount: "-₹1,250",
             isExpense: true,
           ),
         ],

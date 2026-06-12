@@ -1,12 +1,17 @@
 // ignore_for_file: depend_on_referenced_packages
 
+import 'dart:io';
+
+import 'package:dashflow/company/services/api_service.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dashflow/core/setup/onboarding_screen.dart';
 import 'package:dashflow/shared/components/bottom_bar.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
+  final Widget nextScreen;
+  const SplashScreen({super.key, required this.nextScreen});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -27,41 +32,49 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     )..repeat(reverse: true);
-
     // Scale (spring effect)
     _scaleAnimation = Tween<double>(
       begin: 0.95,
       end: 1.05,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.elasticInOut));
-
-    // Jump (move up & down)
     _jumpAnimation = Tween<double>(
       begin: 0,
       end: -15,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
-
     _checkLogin();
   }
 
   Future<void> _checkLogin() async {
-    await Future.delayed(const Duration(seconds: 3));
+    try {
+      print("========== SPLASH SCREEN: FETCHING FCM TOKEN ==========");
+      String? fcmToken = await FirebaseMessaging.instance.getToken();
+      if (fcmToken != null) {
+        print("========== SPLASH SCREEN FCM TOKEN ==========");
+        print(fcmToken);
+        print("=============================================");
+        String platform = Platform.operatingSystem;
+        String deviceId = "device-flutter";
+        await ApiService().registerFcmToken(
+          token: fcmToken,
+          platform: platform,
+          deviceId: deviceId,
+        );
+        print("========== FCM TOKEN API SUCCESS ==========");
+      } else {
+        print("========== SPLASH SCREEN FCM TOKEN IS NULL ==========");
+      }
+    } catch (e) {
+      print("========== Failed to register FCM token in splash: $e ==========");
+    }
 
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
+    await Future.delayed(const Duration(seconds: 3));
 
     if (!mounted) return;
 
-    if (token != null && token.isNotEmpty) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const BottomBarWidget()),
-      );
-    } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const OnboardingScreen()),
-      );
-    }
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => widget.nextScreen),
+    );
   }
 
   @override

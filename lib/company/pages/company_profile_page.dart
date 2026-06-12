@@ -4,6 +4,7 @@ import 'package:dashflow/company/services/api_service.dart' as company_api;
 import 'package:dashflow/features/auth/pages/login_screen.dart' as dashflow_login;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:dashflow/company/components/shared/app_drawer.dart';
 
 class CompanyProfilePage extends StatefulWidget {
   const CompanyProfilePage({super.key});
@@ -191,12 +192,15 @@ class _CompanyProfilePage extends State<CompanyProfilePage> {
         : <String>[];
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
+      drawer: const AppDrawer(activeRoute: 'Company'),
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.white,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Navigator.pop(context),
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu, color: Colors.black87),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
         ),
         actions: [
           PopupMenuButton(

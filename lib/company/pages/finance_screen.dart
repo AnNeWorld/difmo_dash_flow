@@ -1,4 +1,5 @@
 import 'add_expense_screen.dart';
+import 'Add_Income_Page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -6,6 +7,8 @@ import '../models/finance_summary_model.dart';
 import '../services/finance_summary_service.dart';
 import '../utils/currency_formatter.dart';
 import '../models/transaction_model.dart';
+import '../components/shared/app_drawer.dart';
+import 'all_transactions_page.dart';
 
 class FinanceScreen extends ConsumerStatefulWidget {
   const FinanceScreen({super.key});
@@ -24,9 +27,16 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xffF8FAFC),
+      drawer: const AppDrawer(activeRoute: 'Finance'),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu, color: Color(0xff0F172A)),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
         iconTheme: const IconThemeData(color: Color(0xff0F172A)),
         title: Row(
           children: [
@@ -212,17 +222,54 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
             ),
             const SizedBox(width: 12),
             ElevatedButton.icon(
-              onPressed: () {
-                Navigator.push(
+              onPressed: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AddIncomePage(),
+                  ),
+                );
+                if (result == true) {
+                  ref.invalidate(financeSummaryProvider);
+                  ref.invalidate(monthlyCashFlowProvider);
+                  ref.invalidate(recentTransactionsProvider);
+                }
+              },
+              icon: const Icon(Icons.add, size: 16, color: Colors.white),
+              label: const Text(
+                "Add Income",
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF10B981), // Green color for income
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            ElevatedButton.icon(
+              onPressed: () async {
+                final result = await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => const AddExpenseScreen(),
                   ),
                 );
+                if (result == true) {
+                  ref.invalidate(recentTransactionsProvider);
+                }
               },
-              icon: const Icon(Icons.add, size: 16, color: Colors.white),
+              icon: const Icon(Icons.remove, size: 16, color: Colors.white),
               label: const Text(
-                "New Entry",
+                "Add Expense",
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   color: Colors.white,
@@ -510,8 +557,11 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.start,
+            spacing: 16,
+            runSpacing: 16,
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -531,12 +581,12 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
                   ),
                 ],
               ),
-              Row(
+              Wrap(
+                spacing: 16,
+                runSpacing: 8,
                 children: [
                   _buildLegendItem("INCOME", const Color(0xFF3B82F6)),
-                  const SizedBox(width: 16),
                   _buildLegendItem("EXPENSES", const Color(0xFFEF4444)),
-                  const SizedBox(width: 16),
                   _buildLegendItem("PAYROLL", const Color(0xFFF59E0B)),
                 ],
               ),
@@ -838,7 +888,9 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
                     ],
                   ),
                   TextButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => const AllTransactionsPage()));
+                    },
                     style: TextButton.styleFrom(
                       foregroundColor: const Color(0xFF0F172A),
                     ),

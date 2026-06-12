@@ -2,20 +2,19 @@ import 'package:dashflow/company/pages/Recruitment_page.dart';
 import 'package:dashflow/company/pages/company_profile_page.dart';
 import 'package:dashflow/company/pages/employees_page.dart';
 import 'package:dashflow/company/pages/finance_screen.dart';
-import 'package:dashflow/company/pages/my_attendance_page.dart';
-import 'package:dashflow/company/pages/my_leaves_page.dart';
 import 'package:dashflow/company/pages/my_payroll_page.dart';
+import 'package:dashflow/company/pages/my_attendance_page.dart';
 import 'package:dashflow/company/pages/notifications_page.dart';
-import 'package:dashflow/company/pages/payroll_page.dart';
 import 'package:dashflow/company/pages/repots_page.dart';
+
 import 'package:dashflow/company/pages/leave_management_screen.dart';
 import 'package:dashflow/features/profile/pages/profile.dart';
+import 'package:dashflow/company/components/shared/app_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// Components
 import '../components/dashboard/stat_card_new.dart';
 import '../components/dashboard/attendance_chart.dart';
 import '../components/dashboard/fiscal_summary.dart';
@@ -33,7 +32,7 @@ class DashboardPage extends ConsumerStatefulWidget {
 }
 
 class _DashboardPageState extends ConsumerState<DashboardPage> {
-  String _userName = "Admin";
+  String _userName = "User";
 
   @override
   void initState() {
@@ -53,6 +52,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           setState(() {
             _userName = '$firstName $lastName'.trim();
           });
+        } else if (user['user'] != null && user['user']['firstName'] != null) {
+          setState(() {
+            _userName = '${user['user']['firstName']} ${user['user']['lastName'] ?? ''}'.trim();
+          });
         } else if (user['name'] != null) {
           setState(() {
             _userName = user['name'];
@@ -68,7 +71,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
 
     return Scaffold(
       backgroundColor: const Color(0xffF8FAFC), // Slate 50
-      drawer: _buildDrawer(context),
+      drawer: const AppDrawer(activeRoute: 'Dashboard'),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -89,12 +92,51 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none, color: Color(0xff64748B)),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const NotificationsPage()),
+          Consumer(
+            builder: (context, ref, _) {
+              final unread = ref.watch(unreadCountProvider);
+              return Stack(
+                children: [
+                  IconButton(
+                    icon: const Icon(
+                      Icons.notifications_none,
+                      color: Color(0xff64748B),
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const NotificationsPage(),
+                        ),
+                      );
+                    },
+                  ),
+                  if (unread > 0)
+                    Positioned(
+                      right: 6,
+                      top: 6,
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        constraints: const BoxConstraints(
+                          minWidth: 17,
+                          minHeight: 17,
+                        ),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFDC2626),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          unread > 99 ? '99+' : '$unread',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
               );
             },
           ),
@@ -104,9 +146,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => const ProfilePage(),
-                  ),
+                  MaterialPageRoute(builder: (context) => const ProfilePage()),
                 );
               },
               child: CircleAvatar(
@@ -114,7 +154,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 radius: 16,
                 child: Text(
                   _userName.isNotEmpty ? _userName[0].toUpperCase() : "A",
-                  style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    color: Colors.blue,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
@@ -139,13 +182,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 const SizedBox(height: 6),
                 const Text(
                   "Here is what's happening in your workspace today.",
-                  style: TextStyle(
-                    color: Color(0xff64748B),
-                    fontSize: 15,
-                  ),
+                  style: TextStyle(color: Color(0xff64748B), fontSize: 15),
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Top Metrics Grid
                 GridView.count(
                   crossAxisCount: 2,
@@ -189,9 +229,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 24),
-                
+
                 // Attendance Chart
                 AttendanceChartWidget(
                   trends: data.attendanceTrends,
@@ -227,106 +267,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Error: $err')),
+        error: (err, stack) => Center(child: Text('Error: ₹err')),
       ),
     );
   }
 
-  Widget _buildDrawer(BuildContext context) {
-    return Drawer(
-      child: ListView(
-        children: [
-          DrawerHeader(
-            decoration: const BoxDecoration(
-              color: Color(0xff1D4ED8),
-            ),
-            child: const Text(
-              "DIFMO CRM",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          const ListTile(
-            leading: Icon(Icons.dashboard, color: Color(0xff1D4ED8)),
-            title: Text("Dashboard", style: TextStyle(color: Color(0xff1D4ED8), fontWeight: FontWeight.bold)),
-          ),
-          ListTile(
-            leading: const Icon(Icons.people),
-            title: const Text("Employees"),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const EmployeePage()));
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.time_to_leave),
-            title: const Text("Leave Requests"),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const LeaveManagementScreen()));
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.account_balance_wallet),
-            title: const Text("Finance"),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const FinanceScreen()));
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.notifications),
-            title: const Text("Notifications"),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationsPage()));
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.work),
-            title: const Text("Recruitment"),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const RecruitmentPage()));
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.payments),
-            title: const Text("Pay Roll"),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const MyPayrollPage()));
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.how_to_reg),
-            title: const Text("Attendance"),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const MyAttendancePage()));
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.assessment),
-            title: const Text("Reports"),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const ReportsPage()));
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.business),
-            title: const Text("Company"),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const CompanyProfilePage()));
-            },
-          ),
-        ],
-      ),
-    );
-  }
 }

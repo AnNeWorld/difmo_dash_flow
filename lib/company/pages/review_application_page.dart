@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import '../services/api_service.dart';
 
 class Applicant {
   final String name;
@@ -22,101 +27,87 @@ class Applicant {
   });
 }
 
-class ReviewApplicationsPage extends StatefulWidget {
+final applicationsProvider =
+    StateNotifierProvider<ApplicationsNotifier, AsyncValue<List<Applicant>>>((
+      ref,
+    ) {
+      return ApplicationsNotifier();
+    });
+
+class ApplicationsNotifier extends StateNotifier<AsyncValue<List<Applicant>>> {
+  ApplicationsNotifier() : super(const AsyncValue.loading()) {
+    fetchApplications();
+  }
+
+  Future<void> fetchApplications() async {
+    try {
+      state = const AsyncValue.loading();
+      final prefs = await SharedPreferences.getInstance();
+      String companyId = '';
+      final token = prefs.getString('token') ?? prefs.getString('jwt_token');
+      if (token != null && token.isNotEmpty) {
+        final parts = token.split('.');
+        if (parts.length == 3) {
+          final payload = jsonDecode(
+            utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))),
+          );
+          companyId = payload['companyId']?.toString() ?? '';
+        }
+      }
+      if (companyId.isEmpty) {
+        final userStr =
+            prefs.getString('user') ?? prefs.getString('user_profile');
+        if (userStr != null) {
+          final user = jsonDecode(userStr);
+          companyId =
+              user['companyId']?.toString() ??
+              user['company']?['id']?.toString() ??
+              user['company']?['_id']?.toString() ??
+              '';
+        }
+      }
+
+      if (companyId.isNotEmpty) {
+        final data = await ApiService().getJobApplications(
+          companyId: companyId,
+        );
+        final applicants = data.map((json) {
+          return Applicant(
+            name: json['name']?.toString() ?? 'Unknown Candidate',
+            role: json['role']?.toString() ?? 'Applicant',
+            location: json['location']?.toString() ?? 'Remote',
+            experience: json['experience']?.toString() ?? 'Fresher',
+            appliedDate: json['appliedDate']?.toString() ?? 'Recent',
+            avatarInitials: (json['name']?.toString().isNotEmpty == true)
+                ? json['name'].toString().substring(0, 1).toUpperCase()
+                : 'U',
+            avatarColor: const Color(0xFF1E40AF),
+            status: json['status']?.toString() ?? 'New',
+          );
+        }).toList();
+        state = AsyncValue.data(applicants);
+      } else {
+        state = const AsyncValue.data([]);
+      }
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+}
+
+class ReviewApplicationsPage extends ConsumerStatefulWidget {
   const ReviewApplicationsPage({super.key});
 
   @override
-  State<ReviewApplicationsPage> createState() => _ReviewApplicationsPageState();
+  ConsumerState<ReviewApplicationsPage> createState() =>
+      _ReviewApplicationsPageState();
 }
 
-class _ReviewApplicationsPageState extends State<ReviewApplicationsPage>
+class _ReviewApplicationsPageState extends ConsumerState<ReviewApplicationsPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
-
-  final List<Applicant> _applicants = [
-    Applicant(
-      name: 'Aryan Sharma',
-      role: 'Senior Flutter Developer',
-      location: 'Mumbai, India',
-      experience: '5 yrs exp',
-      appliedDate: 'Today',
-      avatarInitials: 'AS',
-      avatarColor: const Color(0xFF1E40AF),
-      status: 'New',
-    ),
-    Applicant(
-      name: 'Priya Verma',
-      role: 'UI/UX Designer',
-      location: 'Bangalore, India',
-      experience: '3 yrs exp',
-      appliedDate: 'Yesterday',
-      avatarInitials: 'PV',
-      avatarColor: const Color(0xFF065F46),
-      status: 'Shortlisted',
-    ),
-    Applicant(
-      name: 'Rahul Mehta',
-      role: 'Backend Engineer',
-      location: 'Delhi, India',
-      experience: '7 yrs exp',
-      appliedDate: 'Dec 18',
-      avatarInitials: 'RM',
-      avatarColor: const Color(0xFF92400E),
-      status: 'Interview',
-    ),
-    Applicant(
-      name: 'Sneha Patel',
-      role: 'Product Manager',
-      location: 'Pune, India',
-      experience: '4 yrs exp',
-      appliedDate: 'Dec 17',
-      avatarInitials: 'SP',
-      avatarColor: const Color(0xFF6B21A8),
-      status: 'Offered',
-    ),
-    Applicant(
-      name: 'Karan Joshi',
-      role: 'Senior Flutter Developer',
-      location: 'Hyderabad, India',
-      experience: '6 yrs exp',
-      appliedDate: 'Dec 16',
-      avatarInitials: 'KJ',
-      avatarColor: const Color(0xFF9F1239),
-      status: 'Rejected',
-    ),
-    Applicant(
-      name: 'Divya Nair',
-      role: 'Data Analyst',
-      location: 'Chennai, India',
-      experience: '2 yrs exp',
-      appliedDate: 'Dec 15',
-      avatarInitials: 'DN',
-      avatarColor: const Color(0xFF164E63),
-      status: 'New',
-    ),
-    Applicant(
-      name: 'Rohan Gupta',
-      role: 'DevOps Engineer',
-      location: 'Kolkata, India',
-      experience: '4 yrs exp',
-      appliedDate: 'Dec 14',
-      avatarInitials: 'RG',
-      avatarColor: const Color(0xFF14532D),
-      status: 'Shortlisted',
-    ),
-    Applicant(
-      name: 'Anjali Singh',
-      role: 'HR Coordinator',
-      location: 'Jaipur, India',
-      experience: '3 yrs exp',
-      appliedDate: 'Dec 13',
-      avatarInitials: 'AS',
-      avatarColor: const Color(0xFF1E3A5F),
-      status: 'Interview',
-    ),
-  ];
 
   final List<String> _tabs = [
     'All',
@@ -140,11 +131,11 @@ class _ReviewApplicationsPageState extends State<ReviewApplicationsPage>
     super.dispose();
   }
 
-  List<Applicant> get _filtered {
+  List<Applicant> _filtered(List<Applicant> applicants) {
     final tabIndex = _tabController.index;
     final tabFilter = _tabs[tabIndex];
 
-    return _applicants.where((a) {
+    return applicants.where((a) {
       final matchesTab = tabFilter == 'All' || a.status == tabFilter;
       final matchesSearch =
           _searchQuery.isEmpty ||
@@ -246,43 +237,56 @@ class _ReviewApplicationsPageState extends State<ReviewApplicationsPage>
                 fontSize: 17,
               ),
             ),
-            Text(
-              '${_applicants.length} total applicants',
-              style: const TextStyle(
-                color: Color(0xFF6B7280),
-                fontSize: 12,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
+            ref
+                .watch(applicationsProvider)
+                .maybeWhen(
+                  data: (applicants) => Text(
+                    '${applicants.length} total applicants',
+                    style: const TextStyle(
+                      color: Color(0xFF6B7280),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                  orElse: () => const SizedBox(),
+                ),
           ],
         ),
         actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 16),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0xFFEFF6FF),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.people_alt_outlined,
-                  color: Color(0xFF1E40AF),
-                  size: 16,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  '${_applicants.length}',
-                  style: const TextStyle(
-                    color: Color(0xFF1E40AF),
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
+          ref
+              .watch(applicationsProvider)
+              .maybeWhen(
+                data: (applicants) => Container(
+                  margin: const EdgeInsets.only(right: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEFF6FF),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.people_alt_outlined,
+                        color: Color(0xFF1E40AF),
+                        size: 16,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${applicants.length}',
+                        style: const TextStyle(
+                          color: Color(0xFF1E40AF),
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
-          ),
+                orElse: () => const SizedBox(),
+              ),
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
@@ -355,34 +359,48 @@ class _ReviewApplicationsPageState extends State<ReviewApplicationsPage>
                 borderSide: BorderSide(color: Color(0xFF1E40AF), width: 2.5),
               ),
               tabs: _tabs.map((tab) {
-                final count = tab == 'All'
-                    ? _applicants.length
-                    : _applicants.where((a) => a.status == tab).length;
                 return Tab(
                   child: Row(
                     children: [
                       Text(tab),
-                      if (count > 0) ...[
-                        const SizedBox(width: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 1,
+                      ref
+                          .watch(applicationsProvider)
+                          .maybeWhen(
+                            data: (applicants) {
+                              final count = tab == 'All'
+                                  ? applicants.length
+                                  : applicants
+                                        .where((a) => a.status == tab)
+                                        .length;
+                              if (count > 0) {
+                                return Row(
+                                  children: [
+                                    const SizedBox(width: 4),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 1,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFEFF6FF),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Text(
+                                        '$count',
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFF1E40AF),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }
+                              return const SizedBox();
+                            },
+                            orElse: () => const SizedBox(),
                           ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEFF6FF),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            '$count',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF1E40AF),
-                            ),
-                          ),
-                        ),
-                      ],
                     ],
                   ),
                 );
@@ -390,13 +408,24 @@ class _ReviewApplicationsPageState extends State<ReviewApplicationsPage>
             ),
           ),
           Expanded(
-            child: _filtered.isEmpty
-                ? _buildEmpty()
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _filtered.length,
-                    itemBuilder: (ctx, i) => _buildApplicantCard(_filtered[i]),
+            child: ref
+                .watch(applicationsProvider)
+                .when(
+                  loading: () => const Center(
+                    child: CircularProgressIndicator(color: Color(0xFF1E40AF)),
                   ),
+                  error: (e, st) => Center(child: Text('Error: $e')),
+                  data: (applicants) {
+                    final filteredList = _filtered(applicants);
+                    if (filteredList.isEmpty) return _buildEmpty();
+                    return ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: filteredList.length,
+                      itemBuilder: (ctx, i) =>
+                          _buildApplicantCard(filteredList[i]),
+                    );
+                  },
+                ),
           ),
         ],
       ),

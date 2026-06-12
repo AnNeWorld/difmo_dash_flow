@@ -475,15 +475,15 @@ class _DashboardPageState extends State<DashboardPage> {
       child: Container(
         width: double.infinity,
         margin: const EdgeInsets.symmetric(horizontal: 20),
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: const EdgeInsets.symmetric(vertical: 18),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(25),
+          borderRadius: BorderRadius.circular(30),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 15,
-              offset: const Offset(0, 5),
+              color: Colors.black.withValues(alpha: 0.15),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
             ),
           ],
         ),
@@ -504,23 +504,28 @@ class _DashboardPageState extends State<DashboardPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(btnIcon, color: iconColor, size: 28),
-                    const SizedBox(width: 8),
+                    Icon(btnIcon, color: iconColor, size: 30),
+                    const SizedBox(width: 10),
                     Text(
                       btnText,
                       style: TextStyle(
                         color: iconColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 22,
+                        letterSpacing: 0.5,
                       ),
                     ),
                   ],
                 ),
-              if (!isLoading) const SizedBox(height: 6),
+              if (!isLoading) const SizedBox(height: 8),
               if (!isLoading)
                 Text(
                   subText,
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                  style: TextStyle(
+                    color: Colors.grey.shade500, 
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
             ],
           ),
@@ -594,19 +599,27 @@ class _DashboardPageState extends State<DashboardPage> {
 
                 // Header Section
                 Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
                       colors: [
+                        Color(0xFF2A4B62),
                         Color(0xFF36617E),
                         Color(0xFF5386A4),
-                      ], // Primary to Lighter variant
+                      ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(30),
-                      bottomRight: Radius.circular(30),
+                      bottomLeft: Radius.circular(35),
+                      bottomRight: Radius.circular(35),
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Color(0xFF36617E).withValues(alpha: 0.3),
+                        blurRadius: 20,
+                        offset: Offset(0, 10),
+                      ),
+                    ],
                   ),
                   padding: const EdgeInsets.fromLTRB(20, 60, 20, 30),
                   child: Column(
@@ -674,9 +687,10 @@ class _DashboardPageState extends State<DashboardPage> {
                             Text(
                               currentTime,
                               style: const TextStyle(
-                                fontSize: 38,
+                                fontSize: 44,
                                 color: Colors.white,
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1.5,
                               ),
                             ),
                             Text(
@@ -713,16 +727,10 @@ class _DashboardPageState extends State<DashboardPage> {
                 const SizedBox(height: 25),
 
                 // Quick Actions
-                Padding(
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: GridView.count(
-                    crossAxisCount:
-                        3, // Changed to 3 for better spacing with 6 options
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    childAspectRatio: 1.1,
-                    mainAxisSpacing: 10,
-                    crossAxisSpacing: 10,
+                  child: Row(
                     children: [
                       ActionIcon(
                         icon: Iconsax.people,
@@ -734,6 +742,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           ),
                         ),
                       ),
+                      const SizedBox(width: 15),
                       ActionIcon(
                         icon: Iconsax.calendar_edit,
                         label: "Leave",
@@ -744,26 +753,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           ),
                         ),
                       ),
-                      ActionIcon(
-                        icon: Iconsax.document_text,
-                        label: "Payslip",
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const PayslipListScreen(),
-                          ),
-                        ),
-                      ),
-                      ActionIcon(
-                        icon: Iconsax.task_square,
-                        label: "Tasks",
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const TaskPage(),
-                          ),
-                        ),
-                      ),
+                      const SizedBox(width: 15),
                       ActionIcon(
                         icon: Iconsax.calendar_tick,
                         label: "Attendance",
@@ -783,78 +773,33 @@ class _DashboardPageState extends State<DashboardPage> {
                           }
                         },
                       ),
+                      const SizedBox(width: 15),
+                      ActionIcon(
+                        icon: Iconsax.task_square,
+                        label: "Tasks",
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const TaskPage(),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 15),
+                      ActionIcon(
+                        icon: Iconsax.document_text,
+                        label: "Payslip",
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const PayslipListScreen(),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
 
-                const SizedBox(height: 15),
-
-                // Company Announcement Banner
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Colors.orange.shade300,
-                          Colors.orange.shade600,
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.orange.withValues(alpha: 0.3),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Iconsax.notification_bing,
-                            color: Colors.white,
-                            size: 30,
-                          ),
-                        ),
-                        const SizedBox(width: 15),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
-                              Text(
-                                "Company Announcement",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              SizedBox(height: 5),
-                              Text(
-                                "Townhall meeting tomorrow at 10 AM. Don't forget!",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 25),
+                const SizedBox(height: 35), // Added space below quick actions
 
                 // Assigned Tasks Section
                 Padding(
@@ -1309,28 +1254,44 @@ class ActionIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(15),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: const Color(
-                0xFF36617E,
-              ).withValues(alpha: 0.1), // Primary Light
-              borderRadius: BorderRadius.circular(15),
+    return Container(
+      width: 100, // Increased width for breathing room
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(18), // Increased padding
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(22),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Icon(icon, color: const Color(0xFF36617E), size: 28),
             ),
-            child: Icon(icon, color: const Color(0xFF36617E), size: 25),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 12, color: Colors.black87),
-          ),
-        ],
+            const SizedBox(height: 12),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 13, // Slightly larger text
+                color: Color(0xFF1F2937),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -247,20 +247,37 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
                     itemCount: attendanceList.length,
                     itemBuilder: (context, index) {
                       final item = attendanceList[index];
-                      final date = item['date'];
-                      final checkIn = _parseUtcTime(date, item['checkInTime']);
-                      final checkOut = _parseUtcTime(
-                        date,
-                        item['checkOutTime'],
-                      );
+                      
+                      String? dateStr = item['date'] ?? item['createdAt'] ?? item['checkIn'];
+                      if (dateStr == null) dateStr = DateTime.now().toIso8601String();
+                      
+                      DateTime? parsedCheckIn;
+                      String? inRaw = item['checkIn'] ?? item['checkInTime'] ?? item['inTime'] ?? item['clockIn'];
+                      if (inRaw != null) {
+                        if (inRaw.contains('T')) {
+                          try { parsedCheckIn = DateTime.parse(inRaw).toLocal(); } catch(_) {}
+                        } else {
+                          parsedCheckIn = _parseUtcTime(dateStr, inRaw);
+                        }
+                      }
+
+                      DateTime? parsedCheckOut;
+                      String? outRaw = item['checkOut'] ?? item['checkOutTime'] ?? item['outTime'] ?? item['clockOut'];
+                      if (outRaw != null) {
+                        if (outRaw.contains('T')) {
+                          try { parsedCheckOut = DateTime.parse(outRaw).toLocal(); } catch(_) {}
+                        } else {
+                          parsedCheckOut = _parseUtcTime(dateStr, outRaw);
+                        }
+                      }
+
                       final status = item['status'] ?? 'Present';
-                      final workMode = (item['workMode'] ?? 'office')
-                          .toString();
+                      final workMode = (item['workMode'] ?? 'office').toString();
 
                       return _buildAttendanceCard(
-                        date: date,
-                        checkIn: checkIn,
-                        checkOut: checkOut,
+                        date: dateStr,
+                        checkIn: parsedCheckIn,
+                        checkOut: parsedCheckOut,
                         status: status,
                         workMode: workMode,
                       );
@@ -348,159 +365,76 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
     required String status,
     required String workMode,
   }) {
-    final bool isWFH = workMode.toLowerCase() == 'wfh';
-    final Color wfhColor = isWFH ? Colors.teal : Colors.blue;
-    final IconData wfhIcon = isWFH
-        ? Icons.home_work_rounded
-        : Icons.business_rounded;
-    final String wfhLabel = isWFH ? "Work From Home" : "Office";
+    String displayDate = date;
+    try {
+      displayDate = DateFormat('EEEE, dd MMM').format(DateTime.parse(date).toLocal());
+    } catch (_) {}
 
-    return Container(
+    final checkInStr = checkIn != null ? DateFormat('hh:mm a').format(checkIn) : '--:--';
+    final checkOutStr = checkOut != null ? DateFormat('hh:mm a').format(checkOut) : '--:--';
+    final color = _getStatusColor(status);
+
+    return Card(
+      elevation: 2,
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        border: Border(
-          left: BorderSide(color: wfhColor, width: 4),
-          top: BorderSide(color: Colors.grey.shade200),
-          right: BorderSide(color: Colors.grey.shade200),
-          bottom: BorderSide(color: Colors.grey.shade200),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        side: BorderSide(color: color.withOpacity(0.5), width: 1),
       ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                DateFormat('EEEE, dd MMM').format(DateTime.parse(date)),
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                ),
-              ),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: wfhColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(wfhIcon, size: 11, color: wfhColor),
-                        const SizedBox(width: 3),
-                        Text(
-                          wfhLabel,
-                          style: TextStyle(
-                            color: wfhColor,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _getStatusColor(status).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      status.toString().toUpperCase(),
-                      style: TextStyle(
-                        color: _getStatusColor(status),
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-
-          Row(
-            children: [
-              Expanded(
-                child: _buildTimeColumn(
-                  "Check In",
-                  checkIn != null
-                      ? DateFormat('hh:mm a').format(checkIn)
-                      : "--:--",
-                  Iconsax.login,
-                  Colors.green,
-                ),
-              ),
-              Container(width: 1, height: 30, color: Colors.grey.shade200),
-              Expanded(
-                child: _buildTimeColumn(
-                  "Check Out",
-                  checkOut != null
-                      ? DateFormat('hh:mm a').format(checkOut)
-                      : "--:--",
-                  Iconsax.logout,
-                  Colors.orange,
-                ),
-              ),
-              Container(width: 1, height: 30, color: Colors.grey.shade200),
-              Expanded(
-                child: _buildTimeColumn(
-                  "Hrs",
-                  _calculateHours(checkIn, checkOut),
-                  Iconsax.clock,
-                  Colors.blue,
-                ),
-              ),
-            ],
-          ),
-          if (isWFH) ...[
-            const SizedBox(height: 10),
-            const Divider(height: 1, color: Color(0xFFF3F4F6)),
-            const SizedBox(height: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(
-                  Icons.location_on_outlined,
-                  size: 13,
-                  color: Colors.teal.shade400,
+                Text(
+                  displayDate,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
                 ),
-                const SizedBox(width: 4),
-                Expanded(
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                   child: Text(
-                    "Remote Location",
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.teal.shade600,
-                      fontStyle: FontStyle.italic,
-                    ),
+                    status.toUpperCase(),
+                    style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
             ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildSimpleTimeCol("Check In", checkInStr, Iconsax.login, Colors.green),
+                _buildSimpleTimeCol("Check Out", checkOutStr, Iconsax.logout, Colors.orange),
+                _buildSimpleTimeCol("Total", _calculateHours(checkIn, checkOut), Iconsax.clock, Colors.blue),
+              ],
+            ),
           ],
-        ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildSimpleTimeCol(String label, String time, IconData icon, Color color) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 14, color: color),
+            const SizedBox(width: 4),
+            Text(label, style: const TextStyle(fontSize: 12, color: Colors.black54)),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(time, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black)),
+      ],
     );
   }
 

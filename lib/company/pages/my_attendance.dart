@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(const MyApp());
@@ -20,8 +22,58 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class AttendancePage extends StatelessWidget {
+class AttendancePage extends StatefulWidget {
   const AttendancePage({super.key});
+
+  @override
+  State<AttendancePage> createState() => _AttendancePageState();
+}
+
+class _AttendancePageState extends State<AttendancePage> {
+  String _employeeName = "Loading...";
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserName();
+  }
+
+  Future<void> _loadUserName() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userStr = prefs.getString('user') ?? prefs.getString('user_profile');
+      if (userStr != null) {
+        final user = jsonDecode(userStr);
+        final firstName = user['firstName']?.toString() ?? '';
+        final lastName = user['lastName']?.toString() ?? '';
+        
+        String name = "Employee";
+        if (firstName.isNotEmpty || lastName.isNotEmpty) {
+          name = '$firstName $lastName'.trim();
+        } else if (user['name'] != null) {
+          name = user['name'].toString();
+        }
+        
+        if (mounted) {
+          setState(() {
+            _employeeName = name;
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _employeeName = "Employee";
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _employeeName = "Employee";
+        });
+      }
+    }
+  }
 
   final List<Map<String, dynamic>> attendanceList = const [
     {
@@ -75,10 +127,10 @@ class AttendancePage extends StatelessWidget {
                 color: Colors.blue,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'Attendance Summary',
                     style: TextStyle(
                       color: Colors.white,
@@ -86,15 +138,24 @@ class AttendancePage extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  SizedBox(height: 10),
+                  const SizedBox(height: 10),
                   Text(
+                    'Employee Name: $_employeeName',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  const Text(
                     'Present: 22 Days',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
                     ),
                   ),
-                  Text(
+                  const Text(
                     'Absent: 2 Days',
                     style: TextStyle(
                       color: Colors.white,
@@ -161,23 +222,6 @@ class AttendancePage extends StatelessWidget {
         ),
       ),
 
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 1,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_month),
-            label: 'Attendance',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
-      ),
     );
   }
 }

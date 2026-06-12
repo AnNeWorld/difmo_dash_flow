@@ -1,3 +1,6 @@
+import 'package:dashflow/company/pages/add_employee_page.dart';
+import 'package:dashflow/company/pages/post_job_page.dart';
+import 'package:dashflow/company/pages/review_application_page.dart';
 import 'package:flutter/material.dart';
 
 class QuickActionsWidget extends StatelessWidget {
@@ -35,7 +38,12 @@ class QuickActionsWidget extends StatelessWidget {
             subtitle: "Onboard new team member",
             color: Colors.blue.shade600,
             onTap: () {
-              // Add Employee Action
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AddEmployeePage(),
+                ),
+              );
             },
           ),
           const SizedBox(height: 12),
@@ -46,6 +54,10 @@ class QuickActionsWidget extends StatelessWidget {
             subtitle: "Create new vacancy",
             color: Colors.purple.shade600,
             onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const PostJobPage()),
+              );
               // Post Job Action
             },
           ),
@@ -57,6 +69,12 @@ class QuickActionsWidget extends StatelessWidget {
             subtitle: "Process pending candidates",
             color: Colors.orange.shade600,
             onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ReviewApplicationsPage(),
+                ),
+              );
               // Review Applications Action
             },
           ),

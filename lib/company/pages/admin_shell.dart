@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:dashflow/company/pages/dashboard_page.dart';
 import 'package:dashflow/company/pages/employees_page.dart';
-import 'package:dashflow/company/pages/my_attendance_page.dart';
+import 'package:dashflow/company/pages/attendance_management_screen.dart';
 import 'package:dashflow/company/pages/finance_screen.dart';
 import 'package:dashflow/company/pages/company_profile_page.dart';
 
@@ -28,7 +28,7 @@ class _AdminShellState extends State<AdminShell> {
   final List<Widget> _pages = const [
     _KeepAlivePage(child: DashboardPage()),
     _KeepAlivePage(child: EmployeePage()),
-    _KeepAlivePage(child: MyAttendancePage()),
+    _KeepAlivePage(child: AttendanceManagementScreen()),
     _KeepAlivePage(child: FinanceScreen()),
     _KeepAlivePage(child: CompanyProfilePage()),
   ];

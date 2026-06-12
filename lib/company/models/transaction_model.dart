@@ -29,8 +29,7 @@ class TransactionModel {
     );
   }
 
-  static List<TransactionModel> mockData() {
-    return [
+  static final List<TransactionModel> _mockTransactions = [
       TransactionModel(
         id: '1',
         title: 'Phynol, Sprey freshner, ...',
@@ -76,6 +75,13 @@ class TransactionModel {
         amount: '250',
         type: 'DEBIT',
       ),
-    ];
+  ];
+
+  static List<TransactionModel> mockData() {
+    return _mockTransactions;
+  }
+
+  static void addMockTransaction(TransactionModel tx) {
+    _mockTransactions.insert(0, tx);
   }
 }

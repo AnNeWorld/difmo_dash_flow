@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:dashflow/company/services/api_service.dart' as company_api;
+import 'package:dashflow/core/api/api_service.dart' as core_api;
 
 class PayslipListScreen extends StatefulWidget {
   const PayslipListScreen({super.key});
@@ -10,87 +12,355 @@ class PayslipListScreen extends StatefulWidget {
 }
 
 class _PayslipListScreenState extends State<PayslipListScreen> {
-  String userName = "Employee";
-  String userRole = "Software Engineer";
-  String employeeId = "EMP001";
   bool isLoading = true;
-
-  final List<Map<String, dynamic>> salaryList = [
-    {
-      "month": "April 2026",
-      "basic": 25000,
-      "hra": 5000,
-      "allowances": 2000,
-      "tax": 1200,
-      "pf": 1800,
-    },
-    {
-      "month": "March 2026",
-      "basic": 25000,
-      "hra": 5000,
-      "allowances": 1800,
-      "tax": 1200,
-      "pf": 1800,
-    },
-    {
-      "month": "February 2026",
-      "basic": 25000,
-      "hra": 5000,
-      "allowances": 2200,
-      "tax": 1200,
-      "pf": 1800,
-    },
-  ];
+  List<Map<String, dynamic>> salaryList = [];
+  Map<String, String> _idToName = {};
+  Map<String, String> _idToRole = {};
+  String _companyId = '';
+  String _currentUserName = '';
+  String _currentRole = 'Employee';
 
   @override
   void initState() {
     super.initState();
-    _loadUserInfo();
+    _loadData();
   }
 
-  Future<void> _loadUserInfo() async {
+  Future<void> _loadData() async {
+    String currentId = '';
     try {
       final prefs = await SharedPreferences.getInstance();
       final userStr = prefs.getString('user');
       if (userStr != null) {
         final user = jsonDecode(userStr);
-        setState(() {
-          userName = "${user['firstName'] ?? ''} ${user['lastName'] ?? ''}"
-              .trim();
-          if (userName.isEmpty) userName = "Employee";
-          employeeId = user['id']?.toString() ?? "EMP001";
-          if (user['roles'] != null && user['roles'].isNotEmpty) {
-            userRole = user['roles'][0]['name'] ?? "Employee";
+        final uf = user['firstName']?.toString() ?? '';
+        final ul = user['lastName']?.toString() ?? '';
+        print("FIRST NAME: $uf");
+        print("LAST NAME: $ul");
+        _currentUserName = '$uf $ul'.trim();
+        if (_currentUserName.isEmpty) {
+          _currentUserName = user['name']?.toString() ?? '';
+        }
+        _companyId =
+            user['companyId']?.toString() ??
+            (user['company'] is Map
+                ? (user['company']['id']?.toString() ??
+                      user['company']['_id']?.toString())
+                : user['company']?.toString()) ??
+            '';
+        
+        currentId = user['_id']?.toString() ?? user['id']?.toString() ?? '';
+        if (currentId.isNotEmpty && _currentUserName.isNotEmpty) {
+          _idToName[currentId] = _currentUserName;
+          
+          String role = 'Employee';
+          if (user['roles'] != null && (user['roles'] as List).isNotEmpty) {
+            role = user['roles'][0]['name']?.toString() ?? 'Employee';
+          } else if (user['designation'] != null) {
+            role = user['designation']?.toString() ?? 'Employee';
           }
+          _idToRole[currentId] = role;
+          _currentRole = role;
+        }
+      }
+
+      bool isAdmin = _currentRole.toLowerCase().contains('admin') || 
+                     _currentRole.toLowerCase().contains('hr') || 
+                     _currentRole.toLowerCase().contains('owner');
+
+      if (isAdmin) {
+        // Build id → name map from /users API
+        try {
+          final usersList = await company_api.ApiService().getAllUsers();
+          for (var u in usersList) {
+            final fName = u['firstName']?.toString() ?? '';
+            final lName = u['lastName']?.toString() ?? '';
+            String name = '$fName $lName'.trim();
+            if (name.isEmpty) name = u['name']?.toString() ?? '';
+            String role = 'Employee';
+            if (u['roles'] != null && (u['roles'] as List).isNotEmpty) {
+              role = u['roles'][0]['name']?.toString() ?? 'Employee';
+            } else if (u['designation'] != null) {
+              role = u['designation']?.toString() ?? 'Employee';
+            }
+            for (final id in [u['_id']?.toString(), u['id']?.toString()]) {
+              if (id != null && id.isNotEmpty && name.isNotEmpty) {
+                _idToName[id] = name;
+                _idToRole[id] = role;
+              }
+            }
+          }
+        } catch (_) {}
+
+        // Also map from /employees API
+        try {
+          final empList = await company_api.ApiService().getAllEmployees(
+            companyId: _companyId.isNotEmpty ? _companyId : null,
+          );
+          for (var e in empList) {
+            final fName = e['firstName']?.toString() ?? '';
+            final lName = e['lastName']?.toString() ?? '';
+            String name = '$fName $lName'.trim();
+            if (name.isEmpty) name = e['name']?.toString() ?? '';
+            if (name.isEmpty) {
+              final uRef = e['userId'] ?? e['user'];
+              if (uRef is Map) {
+                final uf = uRef['firstName']?.toString() ?? '';
+                final ul = uRef['lastName']?.toString() ?? '';
+                name = '$uf $ul'.trim();
+                if (name.isEmpty) name = uRef['name']?.toString() ?? '';
+              }
+            }
+            String role = 'Employee';
+            if (e['roles'] != null && (e['roles'] as List).isNotEmpty) {
+              role = e['roles'][0]['name']?.toString() ?? 'Employee';
+            } else if (e['designation'] != null) {
+              role = e['designation']?.toString() ?? 'Employee';
+            }
+            final ids = <String>[];
+            if (e['_id'] != null) ids.add(e['_id'].toString());
+            if (e['id'] != null) ids.add(e['id'].toString());
+            final uRef = e['userId'] ?? e['user'];
+            if (uRef is Map) {
+              final uid = uRef['_id']?.toString() ?? uRef['id']?.toString();
+              if (uid != null && uid.isNotEmpty) ids.add(uid);
+            } else if (uRef is String && uRef.isNotEmpty) {
+              ids.add(uRef);
+            }
+            for (final id in ids) {
+              if (name.isNotEmpty) {
+                _idToName[id] = name;
+                _idToRole[id] = role;
+              }
+            }
+          }
+        } catch (_) {}
+
+        try {
+          final coreEmpList = await core_api.ApiService.getEmployees();
+          for (var e in coreEmpList) {
+            final fName = e['firstName']?.toString() ?? '';
+            final lName = e['lastName']?.toString() ?? '';
+            String name = '$fName $lName'.trim();
+            if (name.isEmpty) name = e['name']?.toString() ?? '';
+            if (name.isEmpty) {
+              final uRef = e['userId'] ?? e['user'];
+              if (uRef is Map) {
+                final uf = uRef['firstName']?.toString() ?? '';
+                final ul = uRef['lastName']?.toString() ?? '';
+                name = '$uf $ul'.trim();
+                if (name.isEmpty) name = uRef['name']?.toString() ?? '';
+              }
+            }
+            String role = 'Employee';
+            if (e['roles'] != null && (e['roles'] as List).isNotEmpty) {
+              role = e['roles'][0]['name']?.toString() ?? 'Employee';
+            } else if (e['designation'] != null) {
+              role = e['designation']?.toString() ?? 'Employee';
+            }
+            final ids = <String>[];
+            if (e['_id'] != null) ids.add(e['_id'].toString());
+            if (e['id'] != null) ids.add(e['id'].toString());
+            final uRef = e['userId'] ?? e['user'];
+            if (uRef is Map) {
+              final uid = uRef['_id']?.toString() ?? uRef['id']?.toString();
+              if (uid != null && uid.isNotEmpty) ids.add(uid);
+            } else if (uRef is String && uRef.isNotEmpty) {
+              ids.add(uRef);
+            }
+            for (final id in ids) {
+              if (name.isNotEmpty) {
+                _idToName[id] = name;
+                _idToRole[id] = role;
+              }
+            }
+          }
+        } catch (_) {}
+      }
+
+
+      // Fetch payrolls from API
+      final data = await company_api.ApiService().getPayrolls(
+        companyId: _companyId.isNotEmpty ? _companyId : null,
+      );
+
+      if (mounted) {
+        setState(() {
+          List<Map<String, dynamic>> loadedData = data.map((e) => e as Map<String, dynamic>).toList();
+          
+          if (!isAdmin) {
+            loadedData = loadedData.where((slip) {
+              final emp = slip['employee'];
+              if (emp is Map) {
+                final uId = emp['userId']?.toString() ?? 
+                            emp['user']?['id']?.toString() ?? 
+                            emp['user']?['_id']?.toString();
+                if (uId == currentId) return true;
+              }
+              final slipEmpId = slip['employeeId']?.toString() ?? slip['userId']?.toString();
+              return slipEmpId == currentId;
+            }).toList();
+          }
+          
+          salaryList = loadedData;
+          isLoading = false;
         });
       }
     } catch (e) {
-      debugPrint("Error loading user info: $e");
-    } finally {
-      setState(() {
-        isLoading = false;
-      });
+      debugPrint("Error loading payslip data: $e");
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
+  /// Extract employee name from a payroll slip using the id map
+  String _getSlipName(Map<String, dynamic> slip) {
+    // 1. Try to get from nested employee/user object
+    final empData =
+        slip['employee'] ??
+        slip['employeeId'] ??
+        slip['userId'] ??
+        slip['user'];
+    if (empData is Map) {
+      // Check if firstName/lastName are nested inside a 'user' object
+      final userData = empData['user'];
+      if (userData is Map) {
+        final f = userData['firstName']?.toString() ?? '';
+        final l = userData['lastName']?.toString() ?? '';
+        if (f.isNotEmpty || l.isNotEmpty) return '$f $l'.trim();
+
+        final nameStr = userData['name']?.toString() ?? '';
+        if (nameStr.isNotEmpty) return nameStr;
+      }
+
+      // Check directly on empData
+      final f = empData['firstName']?.toString() ?? '';
+      final l = empData['lastName']?.toString() ?? '';
+      if (f.isNotEmpty || l.isNotEmpty) return '$f $l'.trim();
+
+      final nameStr = empData['name']?.toString() ?? '';
+      if (nameStr.isNotEmpty) return nameStr;
+
+      // fallback from id map using nested _id
+      final eId = empData['_id']?.toString() ?? empData['id']?.toString() ?? '';
+      if (eId.isNotEmpty && _idToName.containsKey(eId)) return _idToName[eId]!;
+    }
+
+    // 2. Try to look up by string ID
+    final idRef = empData is String ? empData : null;
+    if (idRef != null && idRef.isNotEmpty && _idToName.containsKey(idRef)) {
+      return _idToName[idRef]!;
+    }
+
+    // 3. Try slip-level employeeId string
+    final slipEmpId = slip['employeeId'] is String
+        ? slip['employeeId'].toString()
+        : null;
+    if (slipEmpId != null &&
+        slipEmpId.isNotEmpty &&
+        _idToName.containsKey(slipEmpId)) {
+      return _idToName[slipEmpId]!;
+    }
+
+    return _currentUserName.isNotEmpty ? _currentUserName : 'Employee';
+  }
+
+  String _getSlipRole(Map<String, dynamic> slip) {
+    final empData =
+        slip['employee'] ??
+        slip['employeeId'] ??
+        slip['userId'] ??
+        slip['user'];
+    if (empData is Map) {
+      if (empData['roles'] != null && (empData['roles'] as List).isNotEmpty) {
+        return empData['roles'][0]['name']?.toString() ?? 'Employee';
+      }
+      if (empData['designation'] != null)
+        return empData['designation'].toString();
+      final eId = empData['_id']?.toString() ?? empData['id']?.toString() ?? '';
+      if (eId.isNotEmpty && _idToRole.containsKey(eId)) return _idToRole[eId]!;
+    }
+    final idRef = empData is String ? empData : null;
+    if (idRef != null && _idToRole.containsKey(idRef)) return _idToRole[idRef]!;
+    final slipEmpId = slip['employeeId'] is String
+        ? slip['employeeId'].toString()
+        : null;
+    if (slipEmpId != null && _idToRole.containsKey(slipEmpId)) {
+      return _idToRole[slipEmpId]!;
+    }
+    return _currentRole;
+  }
+
+  String _getSlipEmpId(Map<String, dynamic> slip) {
+    final empData =
+        slip['employee'] ??
+        slip['employeeId'] ??
+        slip['userId'] ??
+        slip['user'];
+    if (empData is Map) {
+      return empData['_id']?.toString() ?? empData['id']?.toString() ?? '';
+    }
+    if (empData is String) return empData;
+    if (slip['employeeId'] is String) return slip['employeeId'].toString();
+    return '';
+  }
+
   double _calculateNetSalary(Map<String, dynamic> item) {
-    double earnings =
-        ((item['basic'] as num) +
-                (item['hra'] as num) +
-                (item['allowances'] as num))
-            .toDouble();
-    double deductions = ((item['tax'] as num) + (item['pf'] as num)).toDouble();
-    return earnings - deductions;
+    if (item['netSalary'] != null) return (item['netSalary'] as num).toDouble();
+    double basic = ((item['basicSalary'] ?? item['basic'] ?? 0) as num)
+        .toDouble();
+    double hra = ((item['hra'] ?? 0) as num).toDouble();
+    double allowances = ((item['allowances'] ?? 0) as num).toDouble();
+    double tax = ((item['tax'] ?? 0) as num).toDouble();
+    double pf = ((item['deductions'] ?? item['pf'] ?? 0) as num).toDouble();
+    return (basic + hra + allowances) - (tax + pf);
+  }
+
+  String _getMonthName(dynamic monthVal) {
+    if (monthVal == null) return "Unknown";
+    final intMonth = int.tryParse(monthVal.toString());
+    if (intMonth != null && intMonth >= 1 && intMonth <= 12) {
+      const months = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
+      return months[intMonth - 1];
+    }
+    return monthVal.toString();
+  }
+
+  String _getYear(dynamic yearVal) => yearVal?.toString() ?? '';
+
+  String _getDisplayMonth(Map<String, dynamic> slip) {
+    if (slip['month'] is String) return slip['month'];
+    return "${_getMonthName(slip['month'])} ${_getYear(slip['year'])}".trim();
   }
 
   void _showPayslipDetails(BuildContext context, Map<String, dynamic> slip) {
-    double earnings =
-        ((slip['basic'] as num) +
-                (slip['hra'] as num) +
-                (slip['allowances'] as num))
-            .toDouble();
-    double deductions = ((slip['tax'] as num) + (slip['pf'] as num)).toDouble();
-    double net = earnings - deductions;
+    final slipUserName = _getSlipName(slip);
+    final slipRole = _getSlipRole(slip);
+    final slipEmpId = _getSlipEmpId(slip);
+    final displayMonth = _getDisplayMonth(slip);
+
+    double basic = ((slip['basicSalary'] ?? slip['basic'] ?? 0) as num)
+        .toDouble();
+    double hra = ((slip['hra'] ?? 0) as num).toDouble();
+    double allowances = ((slip['allowances'] ?? 0) as num).toDouble();
+    double tax = ((slip['tax'] ?? 0) as num).toDouble();
+    double pf = ((slip['deductions'] ?? slip['pf'] ?? 0) as num).toDouble();
+    double earnings = basic + hra + allowances;
+    double deductions = tax + pf;
+    double net =
+        (slip['netSalary'] as num?)?.toDouble() ?? (earnings - deductions);
 
     showModalBottomSheet(
       context: context,
@@ -136,7 +406,7 @@ class _PayslipListScreenState extends State<PayslipListScreen> {
                           ),
                         ),
                         Text(
-                          slip['month'],
+                          displayMonth,
                           style: const TextStyle(
                             color: Color(0xFF64748B),
                             fontSize: 13,
@@ -161,14 +431,20 @@ class _PayslipListScreenState extends State<PayslipListScreen> {
                   children: [
                     Expanded(
                       flex: 4,
-                      child: _buildMetaBlock("EMPLOYEE", userName),
+                      child: _buildMetaBlock("EMPLOYEE", slipUserName),
                     ),
                     const SizedBox(width: 16),
-                    Expanded(flex: 5, child: _buildMetaBlock("ID", employeeId)),
+                    Expanded(
+                      flex: 5,
+                      child: _buildMetaBlock(
+                        "ID",
+                        slipEmpId.isNotEmpty ? slipEmpId.toUpperCase() : "N/A",
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
-                _buildMetaBlock("DESIGNATION", userRole.toUpperCase()),
+                _buildMetaBlock("DESIGNATION", slipRole.toUpperCase()),
 
                 const SizedBox(height: 24),
                 const Divider(color: Color(0xFFE2E8F0)),
@@ -185,9 +461,9 @@ class _PayslipListScreenState extends State<PayslipListScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                _buildSlipRow("Basic Salary", "₹${slip['basic']}"),
-                _buildSlipRow("House Rent Allowance (HRA)", "₹${slip['hra']}"),
-                _buildSlipRow("Special Allowances", "₹${slip['allowances']}"),
+                _buildSlipRow("Basic Salary", "₹$basic"),
+                _buildSlipRow("House Rent Allowance (HRA)", "₹$hra"),
+                _buildSlipRow("Special Allowances", "₹$allowances"),
                 const SizedBox(height: 8),
                 _buildSlipRow("Total Earnings", "₹$earnings", isBold: true),
 
@@ -206,8 +482,8 @@ class _PayslipListScreenState extends State<PayslipListScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                _buildSlipRow("Professional Tax", "₹${slip['tax']}"),
-                _buildSlipRow("Provident Fund (PF)", "₹${slip['pf']}"),
+                _buildSlipRow("Professional Tax", "₹$tax"),
+                _buildSlipRow("Provident Fund (PF)", "₹$pf"),
                 const SizedBox(height: 8),
                 _buildSlipRow(
                   "Total Deductions",
@@ -250,27 +526,29 @@ class _PayslipListScreenState extends State<PayslipListScreen> {
                 const SizedBox(height: 32),
                 SizedBox(
                   width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
+                  child: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF2C5282),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      elevation: 0,
                     ),
-                    child: const Text(
-                      "Done",
+                    icon: const Icon(
+                      Icons.download_rounded,
+                      color: Colors.white,
+                    ),
+                    label: const Text(
+                      "Download Payslip",
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
+                    onPressed: () {},
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
               ],
             ),
           ),
@@ -288,19 +566,17 @@ class _PayslipListScreenState extends State<PayslipListScreen> {
           style: const TextStyle(
             color: Color(0xFF94A3B8),
             fontSize: 10,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 0.5,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.8,
           ),
         ),
-        const SizedBox(height: 3),
+        const SizedBox(height: 4),
         Text(
           value,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
           style: const TextStyle(
             color: Color(0xFF1E293B),
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],
@@ -354,12 +630,40 @@ class _PayslipListScreenState extends State<PayslipListScreen> {
           ? const Center(
               child: CircularProgressIndicator(color: Color(0xFF2C5282)),
             )
+          : salaryList.isEmpty
+          ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.receipt_long_outlined,
+                    size: 64,
+                    color: Color(0xFFCBD5E1),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    "No salary slips found",
+                    style: TextStyle(color: Color(0xFF94A3B8), fontSize: 16),
+                  ),
+                ],
+              ),
+            )
           : ListView.builder(
               itemCount: salaryList.length,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               itemBuilder: (context, index) {
                 final item = salaryList[index];
                 final net = _calculateNetSalary(item);
+                final itemName = _getSlipName(item);
+                final monthStr = _getDisplayMonth(item);
+
+                final empIdRaw = _getSlipEmpId(item);
+                String displayId = 'N/A';
+                if (empIdRaw.isNotEmpty) {
+                  displayId = empIdRaw.length > 8
+                      ? '#${empIdRaw.substring(0, 8).toUpperCase()}'
+                      : '#${empIdRaw.toUpperCase()}';
+                }
 
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),
@@ -390,11 +694,16 @@ class _PayslipListScreenState extends State<PayslipListScreen> {
                           children: [
                             CircleAvatar(
                               radius: 24,
-                              backgroundColor: const Color(0xFFE6F4EA),
-                              child: const Icon(
-                                Icons.currency_rupee,
-                                color: Color(0xFF137333),
-                                size: 20,
+                              backgroundColor: const Color(0xFF2C5282),
+                              child: Text(
+                                itemName.isNotEmpty && itemName != 'Employee'
+                                    ? itemName[0].toUpperCase()
+                                    : 'E',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 14),
@@ -402,19 +711,60 @@ class _PayslipListScreenState extends State<PayslipListScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  Row(
+                                    children: [
+                                      Flexible(
+                                        flex: 1,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 6,
+                                            vertical: 2,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFE8F0FE),
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            displayId,
+                                            style: const TextStyle(
+                                              color: Color(0xFF1A73E8),
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        flex: 2,
+                                        child: Text(
+                                          itemName,
+                                          style: const TextStyle(
+                                            color: Color(0xFF1E293B),
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 2),
                                   Text(
-                                    item['month'],
+                                    monthStr,
                                     style: const TextStyle(
-                                      color: Color(0xFF1E293B),
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF64748B),
+                                      fontSize: 12,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     "Net Paid: ₹$net",
                                     style: const TextStyle(
-                                      color: Color(0xFF64748B),
+                                      color: Color(0xFF2C5282),
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500,
                                     ),

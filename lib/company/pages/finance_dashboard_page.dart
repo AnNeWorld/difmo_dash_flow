@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/finance_service.dart';
+import 'all_transactions_page.dart';
 
 class FinanceDashboardPage extends ConsumerWidget {
   const FinanceDashboardPage({super.key});
@@ -349,9 +350,14 @@ class FinanceDashboardPage extends ConsumerWidget {
                         "Recent Transactions",
                         style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w700, color: textDark),
                       ),
-                      Text(
-                        "View All",
-                        style: GoogleFonts.inter(color: primaryBlue, fontSize: 15, fontWeight: FontWeight.w600),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(context, MaterialPageRoute(builder: (context) => const AllTransactionsPage()));
+                        },
+                        child: Text(
+                          "View All",
+                          style: GoogleFonts.inter(color: primaryBlue, fontSize: 15, fontWeight: FontWeight.w600),
+                        ),
                       ),
                     ],
                   ),
@@ -402,8 +408,11 @@ class FinanceDashboardPage extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(context, MaterialPageRoute(builder: (context) => const AddIncomePage()));
+                          onPressed: () async {
+                            final result = await Navigator.push(context, MaterialPageRoute(builder: (context) => const AddIncomePage()));
+                            if (result == true) {
+                              ref.invalidate(financeProvider);
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: textDark,
@@ -418,8 +427,11 @@ class FinanceDashboardPage extends ConsumerWidget {
                       const SizedBox(width: 16),
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(context, MaterialPageRoute(builder: (context) => const AddExpensePage()));
+                          onPressed: () async {
+                            final result = await Navigator.push(context, MaterialPageRoute(builder: (context) => const AddExpensePage()));
+                            if (result == true) {
+                              ref.invalidate(financeProvider);
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,

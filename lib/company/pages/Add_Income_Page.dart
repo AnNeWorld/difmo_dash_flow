@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../models/transaction_model.dart';
 
 class AddIncomePage extends StatefulWidget {
   const AddIncomePage({super.key});
@@ -173,6 +175,17 @@ class _AddIncomePageState extends State<AddIncomePage> {
                       ),
 
                       onPressed: () {
+                        final newTx = TransactionModel(
+                          id: DateTime.now().millisecondsSinceEpoch.toString(),
+                          title: titleController.text.isNotEmpty ? titleController.text : 'New Income',
+                          description: noteController.text,
+                          category: 'SALES',
+                          date: DateFormat('MMM dd, yyyy').format(DateTime.now()),
+                          amount: amountController.text.isNotEmpty ? amountController.text : '0',
+                          type: 'CREDIT',
+                        );
+                        TransactionModel.addMockTransaction(newTx);
+
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text("Income Added Successfully"),
@@ -183,7 +196,7 @@ class _AddIncomePageState extends State<AddIncomePage> {
                         amountController.clear();
                         noteController.clear();
 
-                        Navigator.pop(context);
+                        Navigator.pop(context, true);
                       },
 
                       icon: const Icon(Icons.add, color: Colors.white),

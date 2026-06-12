@@ -18,9 +18,6 @@ class _BottomBarWidgetState extends State<BottomBarWidget> {
   final List<Widget> screens = [
     const DashboardPage(),
     ActivityPage(),
-     ActivityPage(),
-      ActivityPage(),
-    // const ProjectsTab(),
     const ProfilePage(),
   ];
 

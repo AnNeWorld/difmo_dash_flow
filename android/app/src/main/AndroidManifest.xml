@@ -9,6 +9,9 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyClF12i0eHy7Nrig6EYu8Z4U5DA2zC09OI"/>
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@mipmap/launcher_icon" />
         <activity
             android:name="com.difmo.dashflow.MainActivity"
             android:exported="true"

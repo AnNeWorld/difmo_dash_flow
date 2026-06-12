@@ -64,7 +64,9 @@ class _ProfilePageState extends State<ProfilePage> {
             }
           } else if (user['branch'] != null) {
             if (user['branch'] is Map) {
-              department = _capitalize(user['branch']['name'] ?? "IT Department");
+              department = _capitalize(
+                user['branch']['name'] ?? "IT Department",
+              );
             } else {
               department = _capitalize(user['branch'].toString());
             }
@@ -468,13 +470,15 @@ class _ProfilePageState extends State<ProfilePage> {
         trailing:
             trailing ??
             const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-        onTap: onTap ?? () {
-          if (trailing == null) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text("Routing to $title...")));
-          }
-        },
+        onTap:
+            onTap ??
+            () {
+              if (trailing == null) {
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text("Routing to $title...")));
+              }
+            },
       ),
     );
   }

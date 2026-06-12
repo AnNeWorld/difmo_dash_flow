@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1077355823086",
+    "project_id": "dash-flow-8a6dd",
+    "storage_bucket": "dash-flow-8a6dd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1077355823086:android:a1867e854fef2e76f958ff",
+        "android_client_info": {
+          "package_name": "com.difmo.dashflow"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDzvhOvYjQRLtHaUxJovmzt7daPN-Eo89U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
