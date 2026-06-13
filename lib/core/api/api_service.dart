@@ -221,6 +221,24 @@ class ApiService {
     }
   }
 
+  static Future<void> removeFcmToken(String token) async {
+    final url = Uri.parse('$baseUrl/notifications/fcm-token');
+    final headers = await _getHeaders();
+    final body = jsonEncode({'token': token});
+
+    _logRequest('DELETE', url, headers: headers, body: body);
+
+    try {
+      final response = await http
+          .delete(url, headers: headers, body: body)
+          .timeout(const Duration(seconds: 30));
+
+      _logResponse('DELETE', url, response);
+    } catch (e) {
+      _logger.e('❌ [API ERROR] removeFcmToken: $e');
+    }
+  }
+
   static Future<Map<String, dynamic>> checkIn(
     String employeeId,
     double latitude,
@@ -262,43 +280,11 @@ class ApiService {
         );
         return data;
       } else {
-        throw Exception('Check-in failed with status: ${response.statusCode}');
+        throw Exception(response.body);
       }
     } catch (e) {
-      _logger.w(
-        '⚠️ Attendance checkIn failure (network/403) - Simulating locally: $e',
-      );
-      try {
-        final mockAttendance = {
-          'id': 'mock-att-${DateTime.now().millisecondsSinceEpoch}',
-          '_id': 'mock-att-${DateTime.now().millisecondsSinceEpoch}',
-          'employeeId': employeeId,
-          'checkIn': DateTime.now().toIso8601String(),
-          'checkOut': null,
-          'latitude': latitude,
-          'longitude': longitude,
-          'location': location,
-          'notes': notes,
-          'isWorkFromHome': isWorkFromHome,
-          'isWfh': isWorkFromHome,
-          'workMode': isWorkFromHome ? 'wfh' : 'office',
-          'status': 'checked-in',
-        };
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(
-          'local_mock_attendance_today_$employeeId',
-          jsonEncode(mockAttendance),
-        );
-
-        _showBypassSnackBar(
-          isWorkFromHome
-              ? 'Bypass: Checked In successfully (Work From Home)!'
-              : 'Bypass: Checked In successfully (Office Mode)!',
-        );
-        return mockAttendance;
-      } catch (fallbackError) {
-        throw Exception('Check-in error: $e');
-      }
+      _logger.e('❌ Attendance checkIn failure: $e');
+      throw Exception('Check-in error: $e');
     }
   }
 
@@ -351,63 +337,11 @@ class ApiService {
         }
         return data;
       } else {
-        throw Exception('Check-out failed with status: ${response.statusCode}');
+        throw Exception(response.body);
       }
     } catch (e) {
-      _logger.w(
-        '⚠️ Attendance checkOut failure (network/403) - Simulating locally: $e',
-      );
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        // Look up the attendance in today cache
-        String? targetKey;
-        Map<String, dynamic>? cachedData;
-        final keys = prefs.getKeys();
-        for (final key in keys) {
-          if (key.startsWith('local_mock_attendance_today_')) {
-            final valStr = prefs.getString(key);
-            if (valStr != null) {
-              final val = jsonDecode(valStr);
-              if (val is Map &&
-                  (val['id'] == attendanceId || val['_id'] == attendanceId)) {
-                targetKey = key;
-                cachedData = Map<String, dynamic>.from(val);
-                break;
-              }
-            }
-          }
-        }
-
-        final updatedAttendance =
-            cachedData ??
-            {
-              'id': attendanceId,
-              '_id': attendanceId,
-              'checkIn': DateTime.now()
-                  .subtract(const Duration(hours: 8))
-                  .toIso8601String(),
-              'latitude': latitude,
-              'longitude': longitude,
-              'location': 'Unknown Location',
-              'notes': notes,
-            };
-        updatedAttendance['checkOut'] = DateTime.now().toIso8601String();
-        updatedAttendance['status'] = 'checked-out';
-
-        if (targetKey != null) {
-          await prefs.setString(targetKey, jsonEncode(updatedAttendance));
-        } else {
-          await prefs.setString(
-            'local_mock_attendance_today_self',
-            jsonEncode(updatedAttendance),
-          );
-        }
-
-        _showBypassSnackBar('Bypass: Checked Out successfully!');
-        return updatedAttendance;
-      } catch (fallbackError) {
-        throw Exception('Check-out error: $e');
-      }
+      _logger.e('❌ Attendance checkOut failure: $e');
+      throw Exception('Check-out error: $e');
     }
   }
 
@@ -454,14 +388,41 @@ class ApiService {
         final cached = jsonDecode(cachedStr);
         if (cached is Map<String, dynamic>) {
           // Verify if the cache is from today to keep it accurate
-          final checkInStr = cached['checkIn'] ?? cached['createdAt'];
+          final checkInStr =
+              cached['checkIn'] ??
+              cached['checkInTime'] ??
+              cached['inTime'] ??
+              cached['clockIn'] ??
+              cached['createdAt'] ??
+              cached['date'];
           if (checkInStr != null) {
-            final checkInDate = DateTime.parse(checkInStr).toLocal();
-            final now = DateTime.now();
-            if (checkInDate.year == now.year &&
-                checkInDate.month == now.month &&
-                checkInDate.day == now.day) {
-              return cached;
+            DateTime? checkInDate;
+            try {
+              if (checkInStr.contains('T')) {
+                checkInDate = DateTime.parse(checkInStr).toLocal();
+              } else if (checkInStr.toLowerCase().contains('am') ||
+                  checkInStr.toLowerCase().contains('pm')) {
+                final dateStr = cached['date'] ?? cached['createdAt'];
+                if (dateStr != null) {
+                  final datePart = dateStr.contains('T')
+                      ? dateStr.split('T')[0]
+                      : dateStr;
+                  checkInDate = DateTime.parse(datePart);
+                } else {
+                  checkInDate = DateTime.now();
+                }
+              } else {
+                checkInDate = DateTime.parse(checkInStr).toLocal();
+              }
+            } catch (_) {}
+
+            if (checkInDate != null) {
+              final now = DateTime.now();
+              if (checkInDate.year == now.year &&
+                  checkInDate.month == now.month &&
+                  checkInDate.day == now.day) {
+                return cached;
+              }
             }
           }
         }
@@ -479,14 +440,41 @@ class ApiService {
         if (cachedStr != null) {
           final cached = jsonDecode(cachedStr);
           if (cached is Map<String, dynamic>) {
-            final checkInStr = cached['checkIn'] ?? cached['createdAt'];
+            final checkInStr =
+                cached['checkIn'] ??
+                cached['checkInTime'] ??
+                cached['inTime'] ??
+                cached['clockIn'] ??
+                cached['createdAt'] ??
+                cached['date'];
             if (checkInStr != null) {
-              final checkInDate = DateTime.parse(checkInStr).toLocal();
-              final now = DateTime.now();
-              if (checkInDate.year == now.year &&
-                  checkInDate.month == now.month &&
-                  checkInDate.day == now.day) {
-                return cached;
+              DateTime? checkInDate;
+              try {
+                if (checkInStr.contains('T')) {
+                  checkInDate = DateTime.parse(checkInStr).toLocal();
+                } else if (checkInStr.toLowerCase().contains('am') ||
+                    checkInStr.toLowerCase().contains('pm')) {
+                  final dateStr = cached['date'] ?? cached['createdAt'];
+                  if (dateStr != null) {
+                    final datePart = dateStr.contains('T')
+                        ? dateStr.split('T')[0]
+                        : dateStr;
+                    checkInDate = DateTime.parse(datePart);
+                  } else {
+                    checkInDate = DateTime.now();
+                  }
+                } else {
+                  checkInDate = DateTime.parse(checkInStr).toLocal();
+                }
+              } catch (_) {}
+
+              if (checkInDate != null) {
+                final now = DateTime.now();
+                if (checkInDate.year == now.year &&
+                    checkInDate.month == now.month &&
+                    checkInDate.day == now.day) {
+                  return cached;
+                }
               }
             }
           }
@@ -533,21 +521,83 @@ class ApiService {
     if (userId != null) {
       queryString = '?userId=$userId';
     }
-    final url = Uri.parse('$baseUrl/employees$queryString');
-    final headers = await _getHeaders();
-
-    _logRequest('GET', url, headers: headers);
 
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      // Attempt to extract companyId from saved user profile
+      String? companyId;
+      final userStr = prefs.getString('user');
+      if (userStr != null) {
+        try {
+          final userObj = jsonDecode(userStr);
+          companyId =
+              userObj['companyId']?.toString() ??
+              (userObj['company'] is Map
+                  ? (userObj['company']['id']?.toString() ??
+                        userObj['company']['_id']?.toString())
+                  : userObj['company']?.toString());
+        } catch (_) {}
+      }
+
+      if (companyId != null && companyId.isNotEmpty) {
+        queryString +=
+            (queryString.isEmpty ? '?' : '&') + 'companyId=$companyId';
+      }
+
+      final url = Uri.parse('$baseUrl/employees$queryString');
+      final headers = await _getHeaders();
+
+      _logRequest('GET', url, headers: headers);
       final response = await http.get(url, headers: headers);
 
-      _logResponse('GET', url, response);
+      // Do not log 403 as an error since we expect it for standard employees
+      if (response.statusCode != 403) {
+        _logResponse('GET', url, response);
+      }
+
       await _handleUnauthorized(response);
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         final data = _extractData(responseData);
-        final List<dynamic> employeesList = List.from(data is List ? data : []);
+        List<dynamic> employeesList = List.from(data is List ? data : []);
+
+        // If backend filtered the list to just the current user, aggressively try to fetch the full list
+        if (employeesList.length <= 1 && companyId != null) {
+          final fallbackUrls = [
+            Uri.parse('$baseUrl/users?companyId=$companyId'),
+            Uri.parse('$baseUrl/companies/$companyId/employees'),
+            Uri.parse('$baseUrl/companies/$companyId/users'),
+          ];
+
+          for (final fUrl in fallbackUrls) {
+            try {
+              final fResponse = await http.get(fUrl, headers: headers);
+              if (fResponse.statusCode == 200) {
+                final fResponseData = jsonDecode(fResponse.body);
+                dynamic fData;
+                if (fResponseData is List) {
+                  fData = fResponseData;
+                } else if (fResponseData is Map) {
+                  if (fResponseData.containsKey('data'))
+                    fData = fResponseData['data'];
+                  else if (fResponseData.containsKey('users'))
+                    fData = fResponseData['users'];
+                  else if (fResponseData.containsKey('employees'))
+                    fData = fResponseData['employees'];
+                  else
+                    fData = fResponseData;
+                }
+                if (fData is List && fData.length > employeesList.length) {
+                  employeesList = List.from(fData);
+                  break;
+                }
+              }
+            } catch (_) {}
+          }
+        }
 
         final prefs = await SharedPreferences.getInstance();
         final savedEmpListStr = prefs.getString('local_mock_employees') ?? '[]';
@@ -556,10 +606,60 @@ class ApiService {
 
         return employeesList;
       } else if (response.statusCode == 403) {
-        _logger.w(
-          '🔒 403 Forbidden in getEmployees - Loading logged-in user and mocks',
-        );
-        final prefs = await SharedPreferences.getInstance();
+        // Fallback: Aggressively try other possible dynamic endpoints if /employees is forbidden
+        if (companyId != null) {
+          final fallbackUrls = [
+            Uri.parse('$baseUrl/users?companyId=$companyId'),
+            Uri.parse('$baseUrl/companies/$companyId/employees'),
+            Uri.parse('$baseUrl/companies/$companyId/users'),
+          ];
+
+          for (final fUrl in fallbackUrls) {
+            try {
+              final fResponse = await http.get(fUrl, headers: headers);
+              if (fResponse.statusCode == 200) {
+                final responseData = jsonDecode(fResponse.body);
+                dynamic data;
+                if (responseData is List) {
+                  data = responseData;
+                } else if (responseData is Map) {
+                  if (responseData.containsKey('data')) {
+                    data = responseData['data'];
+                  } else if (responseData.containsKey('users')) {
+                    data = responseData['users'];
+                  } else if (responseData.containsKey('employees')) {
+                    data = responseData['employees'];
+                  } else {
+                    data = responseData;
+                  }
+                }
+                if (data is List && data.isNotEmpty) {
+                  return List.from(data);
+                }
+              }
+            } catch (_) {}
+          }
+        }
+
+        // Fallback: Try hitting /users if /employees is forbidden
+        try {
+          final usersUrl = Uri.parse(
+            '$baseUrl/users' +
+                (companyId != null ? '?companyId=$companyId' : ''),
+          );
+          final usersResponse = await http.get(usersUrl, headers: headers);
+          if (usersResponse.statusCode == 200) {
+            final responseData = jsonDecode(usersResponse.body);
+            final data = _extractData(responseData);
+            final List<dynamic> employeesList = List.from(
+              data is List ? data : [],
+            );
+            return employeesList;
+          }
+        } catch (_) {
+          // Ignore and proceed to original fallback
+        }
+
         final List<dynamic> employeesList = [];
 
         final userStr = prefs.getString('user');
@@ -568,19 +668,41 @@ class ApiService {
             final userObj = jsonDecode(userStr);
             if (userObj is Map<String, dynamic>) {
               final Map<String, dynamic> mutableUser = Map.from(userObj);
-              if (mutableUser['firstName'] == null &&
-                  mutableUser['name'] != null) {
-                final names = (mutableUser['name'] as String).split(' ');
-                mutableUser['firstName'] = names.first;
-                mutableUser['lastName'] = names.length > 1
-                    ? names.sublist(1).join(' ')
-                    : '';
+              final userId = mutableUser['id'] ?? mutableUser['_id'];
+              bool apiSuccess = false;
+              if (userId != null) {
+                try {
+                  final ownUrl = Uri.parse('$baseUrl/employees/$userId');
+                  final ownResponse = await http.get(ownUrl, headers: headers);
+                  if (ownResponse.statusCode == 200) {
+                    final ownData = jsonDecode(ownResponse.body);
+                    final extractedData = _extractData(ownData);
+                    if (extractedData is Map) {
+                      employeesList.add(extractedData);
+                      apiSuccess = true;
+                    }
+                  }
+                } catch (e) {
+                  _logger.w(
+                    'Failed to fetch own API record, falling back to mock: $e',
+                  );
+                }
               }
-              // If ID/designation/department is missing, ensure defaults
-              mutableUser['_id'] ??= mutableUser['id'] ?? 'self-user';
-              mutableUser['designation'] ??= 'Employee';
-              mutableUser['department'] ??= 'IT Department';
-              employeesList.add(mutableUser);
+              if (!apiSuccess) {
+                if (mutableUser['firstName'] == null &&
+                    mutableUser['name'] != null) {
+                  final names = (mutableUser['name'] as String).split(' ');
+                  mutableUser['firstName'] = names.first;
+                  mutableUser['lastName'] = names.length > 1
+                      ? names.sublist(1).join(' ')
+                      : '';
+                }
+                // If ID/designation/department is missing, ensure defaults
+                mutableUser['_id'] ??= mutableUser['id'] ?? 'self-user';
+                mutableUser['designation'] ??= 'Employee';
+                mutableUser['department'] ??= 'IT Department';
+                employeesList.add(mutableUser);
+              }
             }
           } catch (e) {
             _logger.e('Error parsing logged-in user: $e');
@@ -591,9 +713,9 @@ class ApiService {
         final List<dynamic> savedEmpList = jsonDecode(savedEmpListStr);
         employeesList.addAll(savedEmpList);
 
-        _showBypassSnackBar(
-          'Employee Bypass: Loading personal record & local mock directory.',
-        );
+        // _showBypassSnackBar(
+        //   'Employee Bypass: Loading personal record & local mock directory.',
+        // );
         return employeesList;
       } else {
         throw Exception('Failed to fetch employees: ${response.statusCode}');
@@ -673,19 +795,34 @@ class ApiService {
 
     List<dynamic> history = [];
 
-    try {
-      final response = await http.get(url, headers: headers);
+    int maxRetries = 3;
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        final response = await http
+            .get(url, headers: headers)
+            .timeout(const Duration(seconds: 30));
 
-      _logResponse('GET', url, response);
-      await _handleUnauthorized(response);
+        if (attempt == 1) _logResponse('GET', url, response);
+        await _handleUnauthorized(response);
 
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        final data = _extractData(responseData);
-        if (data is List) history.addAll(data);
+        if (response.statusCode == 200) {
+          final responseData = jsonDecode(response.body);
+          final data = _extractData(responseData);
+          if (data is List) history.addAll(data);
+        }
+        break; // Success, break out of retry loop
+      } catch (e) {
+        if (attempt == maxRetries) {
+          _logger.e(
+            '❌ [API ERROR] getAttendanceHistory (Failed after $maxRetries attempts): $e',
+          );
+        } else {
+          _logger.w(
+            '⚠️ [API WARNING] getAttendanceHistory attempt $attempt failed ($e). Retrying...',
+          );
+          await Future.delayed(const Duration(seconds: 2));
+        }
       }
-    } catch (e) {
-      _logger.e('❌ [API ERROR] getAttendanceHistory: $e');
     }
 
     try {
@@ -804,7 +941,9 @@ class ApiService {
 
         try {
           final prefs = await SharedPreferences.getInstance();
-          final keys = prefs.getKeys().where((k) => k.startsWith('local_mock_attendance_today_'));
+          final keys = prefs.getKeys().where(
+            (k) => k.startsWith('local_mock_attendance_today_'),
+          );
           for (var key in keys) {
             final cachedStr = prefs.getString(key);
             if (cachedStr != null) {
@@ -816,9 +955,14 @@ class ApiService {
                   if (checkInStr != null) {
                     final checkInDate = DateTime.parse(checkInStr).toLocal();
                     final now = DateTime.now();
-                    if (checkInDate.year == now.year && checkInDate.month == now.month && checkInDate.day == now.day) {
+                    if (checkInDate.year == now.year &&
+                        checkInDate.month == now.month &&
+                        checkInDate.day == now.day) {
                       int index = history.indexWhere((item) {
-                        final iEmpId = item['employeeId']?.toString() ?? item['employee']?['id']?.toString() ?? item['employee']?['_id']?.toString();
+                        final iEmpId =
+                            item['employeeId']?.toString() ??
+                            item['employee']?['id']?.toString() ??
+                            item['employee']?['_id']?.toString();
                         return iEmpId == empId.toString();
                       });
                       if (index >= 0) {

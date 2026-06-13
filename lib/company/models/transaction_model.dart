@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+
 class TransactionModel {
   final String id;
   final String title;
@@ -16,6 +19,18 @@ class TransactionModel {
     required this.amount,
     required this.type,
   });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'category': category,
+      'date': date,
+      'amount': amount,
+      'type': type,
+    };
+  }
 
   factory TransactionModel.fromJson(Map<String, dynamic> json) {
     return TransactionModel(
@@ -81,7 +96,31 @@ class TransactionModel {
     return _mockTransactions;
   }
 
-  static void addMockTransaction(TransactionModel tx) {
+  static Future<void> loadSavedTransactions() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedStr = prefs.getString('saved_transactions');
+    if (savedStr != null) {
+      try {
+        final List<dynamic> decoded = jsonDecode(savedStr);
+        final loaded = decoded.map((e) => TransactionModel.fromJson(e)).toList();
+        
+        // Merge with existing avoiding duplicates
+        for (var tx in loaded) {
+          if (!_mockTransactions.any((e) => e.id == tx.id)) {
+            _mockTransactions.insert(0, tx);
+          }
+        }
+      } catch (e) {
+        print("Error loading saved transactions: $e");
+      }
+    }
+  }
+
+  static void addMockTransaction(TransactionModel tx) async {
     _mockTransactions.insert(0, tx);
+    final prefs = await SharedPreferences.getInstance();
+    final toSave = _mockTransactions.where((tx) => !['1','2','3','4','5'].contains(tx.id)).toList();
+    final encoded = jsonEncode(toSave.map((e) => e.toJson()).toList());
+    await prefs.setString('saved_transactions', encoded);
   }
 }

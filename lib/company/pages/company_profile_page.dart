@@ -5,6 +5,7 @@ import 'package:dashflow/features/auth/pages/login_screen.dart' as dashflow_logi
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dashflow/company/components/shared/app_drawer.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class CompanyProfilePage extends StatefulWidget {
   const CompanyProfilePage({super.key});
@@ -513,8 +514,23 @@ class _CompanyProfilePage extends State<CompanyProfilePage> {
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   onPressed: () async {
+                    try {
+                      final token = await FirebaseMessaging.instance.getToken();
+                      if (token != null) {
+                        await ApiService.removeFcmToken(token);
+                      }
+                    } catch (e) {
+                      debugPrint('Error removing FCM token during logout: $e');
+                    }
+                    
                     final prefs = await SharedPreferences.getInstance();
-                    await prefs.clear();
+                    final keys = prefs.getKeys();
+                    final toRemove = keys.where((key) => 
+                      ['token', 'jwt_token', 'access_token', 'user', 'user_profile', 'company_profile'].contains(key)
+                    ).toList();
+                    for (final key in toRemove) {
+                      await prefs.remove(key);
+                    }
                     if (context.mounted) {
                       Navigator.of(context).pushAndRemoveUntil(
                         MaterialPageRoute(builder: (context) => const dashflow_login.LoginScreen()),

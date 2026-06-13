@@ -10,6 +10,7 @@ import 'package:intl/intl.dart';
 import 'package:dashflow/features/auth/pages/login_screen.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:dashflow/features/activities/pages/location_page.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 import 'package:dashflow/features/employees/pages/employees_list_screen.dart';
 import 'package:dashflow/features/payslip/pages/payslip_list_screen.dart';
@@ -147,17 +148,45 @@ class _DashboardPageState extends State<DashboardPage> {
           debugPrint("RAW ATTENDANCE DATA: $attendance"); // DEBUG LOG
 
           if (attendance != null) {
-            String? date = attendance['date'];
-            String? checkInStr = attendance['checkInTime'];
-            String? checkOutStr = attendance['checkOutTime'];
+            String? inRaw =
+                attendance['checkIn'] ??
+                attendance['checkInTime'] ??
+                attendance['inTime'] ??
+                attendance['clockIn'];
+            String? outRaw =
+                attendance['checkOut'] ??
+                attendance['checkOutTime'] ??
+                attendance['outTime'] ??
+                attendance['clockOut'];
+            String? dateStr =
+                attendance['date'] ?? attendance['createdAt'] ?? inRaw;
 
             debugPrint("ID: ${attendance['id']}"); // DEBUG LOG
             debugPrint(
-              "Date: $date, CheckIn: $checkInStr, CheckOut: $checkOutStr",
+              "Date: $dateStr, CheckIn: $inRaw, CheckOut: $outRaw",
             ); // DEBUG LOG
 
-            DateTime? checkIn = _parseUtcTime(date, checkInStr);
-            DateTime? checkOut = _parseUtcTime(date, checkOutStr);
+            DateTime? checkIn;
+            if (inRaw != null) {
+              if (inRaw.contains('T')) {
+                try {
+                  checkIn = DateTime.parse(inRaw).toLocal();
+                } catch (_) {}
+              } else {
+                checkIn = _parseUtcTime(dateStr, inRaw);
+              }
+            }
+
+            DateTime? checkOut;
+            if (outRaw != null) {
+              if (outRaw.contains('T')) {
+                try {
+                  checkOut = DateTime.parse(outRaw).toLocal();
+                } catch (_) {}
+              } else {
+                checkOut = _parseUtcTime(dateStr, outRaw);
+              }
+            }
 
             if (mounted) {
               setState(() {
@@ -218,8 +247,24 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Future<void> _doLogout() async {
     debugPrint("User logging out..."); // Debug log
+
+    try {
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token != null) {
+        await ApiService.removeFcmToken(token);
+      }
+    } catch (e) {
+      debugPrint('Error removing FCM token during logout: $e');
+    }
+
     final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+    final keys = prefs.getKeys();
+    final toRemove = keys.where((key) => 
+      ['token', 'jwt_token', 'access_token', 'user', 'user_profile', 'company_profile'].contains(key)
+    ).toList();
+    for (final key in toRemove) {
+      await prefs.remove(key);
+    }
     debugPrint("SharedPreferences cleared.");
     if (mounted) {
       Navigator.of(context).pushAndRemoveUntil(
@@ -522,7 +567,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 Text(
                   subText,
                   style: TextStyle(
-                    color: Colors.grey.shade500, 
+                    color: Colors.grey.shade500,
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
@@ -596,7 +641,6 @@ class _DashboardPageState extends State<DashboardPage> {
           SingleChildScrollView(
             child: Column(
               children: [
-
                 // Header Section
                 Container(
                   decoration: BoxDecoration(
@@ -800,7 +844,6 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
 
                 const SizedBox(height: 35), // Added space below quick actions
-
                 // Assigned Tasks Section
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),

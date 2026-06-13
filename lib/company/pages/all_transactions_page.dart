@@ -2,19 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/transaction_model.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../services/finance_summary_service.dart';
 
-class AllTransactionsPage extends StatefulWidget {
+class AllTransactionsPage extends ConsumerStatefulWidget {
   const AllTransactionsPage({super.key});
 
   @override
-  State<AllTransactionsPage> createState() => _AllTransactionsPageState();
+  ConsumerState<AllTransactionsPage> createState() => _AllTransactionsPageState();
 }
 
-class _AllTransactionsPageState extends State<AllTransactionsPage> {
+class _AllTransactionsPageState extends ConsumerState<AllTransactionsPage> {
   @override
   Widget build(BuildContext context) {
-    // We fetch from the mutable mockData
-    final transactions = TransactionModel.mockData();
+    final transactionsAsync = ref.watch(allTransactionsProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xffF8FAFC),
@@ -31,14 +32,23 @@ class _AllTransactionsPageState extends State<AllTransactionsPage> {
           ),
         ),
       ),
-      body: ListView.separated(
-        padding: const EdgeInsets.all(24),
-        itemCount: transactions.length,
-        separatorBuilder: (context, index) => const SizedBox(height: 16),
-        itemBuilder: (context, index) {
-          final tx = transactions[index];
-          return _buildTransactionItem(tx);
+      body: transactionsAsync.when(
+        data: (transactions) {
+          if (transactions.isEmpty) {
+            return const Center(child: Text("No transactions found"));
+          }
+          return ListView.separated(
+            padding: const EdgeInsets.all(24),
+            itemCount: transactions.length,
+            separatorBuilder: (context, index) => const SizedBox(height: 16),
+            itemBuilder: (context, index) {
+              final tx = transactions[index];
+              return _buildTransactionItem(tx);
+            },
+          );
         },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => const Center(child: Text("Error loading transactions")),
       ),
     );
   }

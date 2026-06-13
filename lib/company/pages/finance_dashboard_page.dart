@@ -6,6 +6,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/finance_service.dart';
 import 'all_transactions_page.dart';
+import '../services/finance_summary_service.dart';
 
 class FinanceDashboardPage extends ConsumerWidget {
   const FinanceDashboardPage({super.key});
@@ -412,6 +413,8 @@ class FinanceDashboardPage extends ConsumerWidget {
                             final result = await Navigator.push(context, MaterialPageRoute(builder: (context) => const AddIncomePage()));
                             if (result == true) {
                               ref.invalidate(financeProvider);
+                              ref.invalidate(allTransactionsProvider);
+                              ref.invalidate(recentTransactionsProvider);
                             }
                           },
                           style: ElevatedButton.styleFrom(
@@ -431,6 +434,8 @@ class FinanceDashboardPage extends ConsumerWidget {
                             final result = await Navigator.push(context, MaterialPageRoute(builder: (context) => const AddExpensePage()));
                             if (result == true) {
                               ref.invalidate(financeProvider);
+                              ref.invalidate(allTransactionsProvider);
+                              ref.invalidate(recentTransactionsProvider);
                             }
                           },
                           style: ElevatedButton.styleFrom(

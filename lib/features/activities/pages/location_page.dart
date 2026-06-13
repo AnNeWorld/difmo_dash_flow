@@ -399,8 +399,13 @@ class _LocationConfirmPageState extends ConsumerState<LocationConfirmPage> {
         .replaceAll("Exception: ", "");
 
     try {
-      if (cleanStr.trim().startsWith("{")) {
-        final Map<String, dynamic> errorJson = jsonDecode(cleanStr);
+      String jsonPart = cleanStr;
+      final startIdx = cleanStr.indexOf('{');
+      if (startIdx != -1) {
+        jsonPart = cleanStr.substring(startIdx);
+      }
+      if (jsonPart.trim().startsWith("{")) {
+        final Map<String, dynamic> errorJson = jsonDecode(jsonPart);
         if (errorJson.containsKey('message')) {
           displayMessage = errorJson['message'];
         }

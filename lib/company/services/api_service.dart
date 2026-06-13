@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
+import 'package:dashflow/main.dart';
+import 'package:dashflow/features/auth/pages/login_screen.dart';
 
 class ApiService {
   static const String BASE_URL = 'https://dashflow-backend.vercel.app/api';
@@ -49,7 +52,21 @@ class ApiService {
           options.headers['Referer'] = 'https://dashflow-frontend.vercel.app/';
           return handler.next(options);
         },
-        onError: (error, handler) {
+        onError: (error, handler) async {
+          if (error.response?.statusCode == 401) {
+            final prefs = await SharedPreferences.getInstance();
+            final keys = prefs.getKeys();
+            final toRemove = keys.where((key) => 
+              ['token', 'jwt_token', 'access_token', 'user', 'user_profile', 'company_profile'].contains(key)
+            ).toList();
+            for (final key in toRemove) {
+              await prefs.remove(key);
+            }
+            navigatorKey.currentState?.pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => const LoginScreen()),
+              (route) => false,
+            );
+          }
           return handler.next(error);
         },
       ),

@@ -233,6 +233,7 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
                   ref.invalidate(financeSummaryProvider);
                   ref.invalidate(monthlyCashFlowProvider);
                   ref.invalidate(recentTransactionsProvider);
+                  ref.invalidate(allTransactionsProvider);
                 }
               },
               icon: const Icon(Icons.add, size: 16, color: Colors.white),
@@ -265,6 +266,9 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
                 );
                 if (result == true) {
                   ref.invalidate(recentTransactionsProvider);
+                  ref.invalidate(allTransactionsProvider);
+                  ref.invalidate(financeSummaryProvider);
+                  ref.invalidate(monthlyCashFlowProvider);
                 }
               },
               icon: const Icon(Icons.remove, size: 16, color: Colors.white),
@@ -1067,7 +1071,7 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
   }
 
   Widget _buildFullActivityLog() {
-    final transactionsAsync = ref.watch(recentTransactionsProvider);
+    final transactionsAsync = ref.watch(allTransactionsProvider);
 
     return transactionsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -1109,13 +1113,19 @@ class _FinanceScreenState extends ConsumerState<FinanceScreen> {
                     ],
                   ),
                   ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
+                    onPressed: () async {
+                      final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => const AddExpenseScreen(),
                         ),
                       );
+                      if (result == true) {
+                        ref.invalidate(recentTransactionsProvider);
+                        ref.invalidate(allTransactionsProvider);
+                        ref.invalidate(financeSummaryProvider);
+                        ref.invalidate(monthlyCashFlowProvider);
+                      }
                     },
                     icon: const Icon(Icons.add, size: 14, color: Colors.white),
                     label: const Text(

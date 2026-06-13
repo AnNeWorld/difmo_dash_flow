@@ -5,6 +5,8 @@ import 'package:dashflow/features/auth/pages/login_screen.dart';
 import 'package:dashflow/features/payslip/pages/payslip_list_screen.dart';
 import 'package:dashflow/core/archive/screens/archive_screen.dart';
 import 'dart:convert';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:dashflow/core/api/api_service.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -83,8 +85,23 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _doLogout() async {
+    try {
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token != null) {
+        await ApiService.removeFcmToken(token);
+      }
+    } catch (e) {
+      debugPrint('Error removing FCM token during logout: $e');
+    }
+
     final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+    final keys = prefs.getKeys();
+    final toRemove = keys.where((key) => 
+      ['token', 'jwt_token', 'access_token', 'user', 'user_profile', 'company_profile'].contains(key)
+    ).toList();
+    for (final key in toRemove) {
+      await prefs.remove(key);
+    }
     if (mounted) {
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => const LoginScreen()),

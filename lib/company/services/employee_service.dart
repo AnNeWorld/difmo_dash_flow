@@ -20,7 +20,13 @@ class EmployeeService extends StateNotifier<AsyncValue<List<EmployeeModel>>> {
       String companyId = '';
       if (userStr != null) {
         final user = jsonDecode(userStr);
-        companyId = user['companyId']?.toString() ?? (user['company'] is Map ? (user['company']['id']?.toString() ?? user['company']['_id']?.toString()) : user['company']?.toString()) ?? '';
+        companyId =
+            user['companyId']?.toString() ??
+            (user['company'] is Map
+                ? (user['company']['id']?.toString() ??
+                      user['company']['_id']?.toString())
+                : user['company']?.toString()) ??
+            '';
       }
 
       final list = await company_api.ApiService().getAllEmployees(
@@ -30,7 +36,7 @@ class EmployeeService extends StateNotifier<AsyncValue<List<EmployeeModel>>> {
         status: '',
         companyId: companyId.isNotEmpty ? companyId : null,
       );
-      
+
       try {
         final coreEmployees = await core_api.ApiService.getEmployees();
         for (var e in coreEmployees) {

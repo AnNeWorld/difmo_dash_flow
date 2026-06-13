@@ -15,6 +15,7 @@ import 'package:dashflow/shared/components/bottom_bar.dart';
 
 import 'package:dashflow/company/services/api_service.dart' as company_api;
 import 'package:dashflow/core/services/notification_service.dart';
+import 'package:dashflow/company/models/transaction_model.dart';
 
 import 'package:google_maps_flutter_platform_interface/google_maps_flutter_platform_interface.dart';
 import 'package:google_maps_flutter_android/google_maps_flutter_android.dart';
@@ -27,6 +28,7 @@ void main() async {
   await Firebase.initializeApp();
   await company_api.ApiService().init();
   await NotificationService().init();
+  await TransactionModel.loadSavedTransactions();
   final GoogleMapsFlutterPlatform mapsImplementation =
       GoogleMapsFlutterPlatform.instance;
 

@@ -19,6 +19,7 @@ class _LeaveManagementScreenState extends ConsumerState<LeaveManagementScreen> {
 
   final Set<String> _expandedLeaves = {};
   final Map<String, TextEditingController> _remarkControllers = {};
+  final Set<String> _processingLeaves = {};
 
   @override
   void dispose() {
@@ -42,21 +43,33 @@ class _LeaveManagementScreenState extends ConsumerState<LeaveManagementScreen> {
   }
 
   Future<void> _handleUpdateStatus(String id, String newStatus) async {
-    final remark = _remarkControllers[id]?.text ?? '';
-    final success = await ref
-        .read(leaveProvider.notifier)
-        .updateLeaveStatus(id, newStatus, remark: remark);
-    if (success && mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Leave marked as $newStatus')));
-      setState(() {
-        _expandedLeaves.remove(id);
-      });
-    } else if (mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Failed to update leave')));
+    if (_processingLeaves.contains(id)) return;
+    setState(() {
+      _processingLeaves.add(id);
+    });
+    try {
+      final remark = _remarkControllers[id]?.text ?? '';
+      final success = await ref
+          .read(leaveProvider.notifier)
+          .updateLeaveStatus(id, newStatus, remark: remark);
+      if (success && mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Leave marked as $newStatus')));
+        setState(() {
+          _expandedLeaves.remove(id);
+        });
+      } else if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Failed to update leave')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _processingLeaves.remove(id);
+        });
+      }
     }
   }
 
@@ -557,11 +570,23 @@ class _LeaveManagementScreenState extends ConsumerState<LeaveManagementScreen> {
                       vertical: 8,
                     ),
                   ),
-                  onPressed: () => _handleUpdateStatus(leave.id, 'REJECTED'),
-                  child: const Text(
-                    'Reject',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                  ),
+                  onPressed: () {
+                    if (_processingLeaves.contains(leave.id)) return;
+                    _handleUpdateStatus(leave.id, 'REJECTED');
+                  },
+                  child: _processingLeaves.contains(leave.id)
+                      ? const SizedBox(
+                          height: 16,
+                          width: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFDC2626)),
+                          ),
+                        )
+                      : const Text(
+                          'Reject',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                        ),
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton(
@@ -577,11 +602,23 @@ class _LeaveManagementScreenState extends ConsumerState<LeaveManagementScreen> {
                       vertical: 8,
                     ),
                   ),
-                  onPressed: () => _handleUpdateStatus(leave.id, 'APPROVED'),
-                  child: const Text(
-                    'Approve',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                  ),
+                  onPressed: () {
+                    if (_processingLeaves.contains(leave.id)) return;
+                    _handleUpdateStatus(leave.id, 'APPROVED');
+                  },
+                  child: _processingLeaves.contains(leave.id)
+                      ? const SizedBox(
+                          height: 16,
+                          width: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Text(
+                          'Approve',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                        ),
                 ),
               ],
             )
